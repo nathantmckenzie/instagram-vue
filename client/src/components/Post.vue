@@ -1,5 +1,4 @@
 <template>
-  <!-- <div class="container"> -->
   <div
     class="w-full h-full border-2 border-black mt-20 mb-20 flex flex-col items-between relative"
   >
@@ -20,7 +19,7 @@
       stroke="currentColor"
       class="w-6 h-6 absolute bg-black z-20 left-0 bottom-2/4"
       @click="getPreviousImage"
-      v-if="this.currentImage !== 0"
+      v-if="currentImage !== 0"
     >
       <path
         stroke-linecap="round"
@@ -28,10 +27,7 @@
         d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
-    <img
-      :src="this.images[this.currentImage]"
-      class="mt-10 w-[600px] h-96 object-cover"
-    />
+    <img :src="images[currentImage]" class="mt-10 w-[600px] h-96 object-cover" />
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
@@ -40,7 +36,7 @@
       stroke="currentColor"
       class="w-6 h-6 absolute bg-black z-20 right-0 bottom-2/4"
       @click="getNextImage"
-      v-if="this.currentImage !== this.images.length - 1"
+      v-if="currentImage !== images.length - 1"
     >
       <path
         stroke-linecap="round"
@@ -49,10 +45,10 @@
       />
     </svg>
     <div class="flex flex-row absolute z-20 left-2/4 bottom-1/3">
-      <div :key="index" v-for="(photo, index) in this.images.length">
+      <div :key="index" v-for="(photo, index) in images.length">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          :fill="this.currentImage === index ? 'black' : 'grey'"
+          :fill="currentImage === index ? 'black' : 'grey'"
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
@@ -76,20 +72,21 @@
     </div>
     <div class="ml-1" v-if="post.likes?.length > 1">
       Liked by
-      {{ isLiked ? "nathantmckenzie" : post?.likes[0].user.name }}
+      {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
       <span @click="clickOtherLikesButton">and others</span>
     </div>
     <div class="ml-1" v-else>
-      Liked by {{ isLiked ? "nathantmckenzie" : post?.likes[0].user.name }}
+      Liked by {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
     </div>
     <div class="m-1">
       <b>{{ post.user.name }}</b> {{ post.content }}
     </div>
-    <div :key="comment?.id" class="m-1" v-for="comment in post?.comments">
+    <div :key="comment?.id" class="m-1" v-for="comment in post.comments">
       <div>
         <b>{{ comment?.user.name }}</b> {{ comment?.content }}
       </div>
     </div>
+    <text-field />
   </div>
 </template>
 
@@ -98,6 +95,9 @@ import Modal from "./Modal.vue";
 import LikeButton from "./LikeButton.vue";
 import CommentButton from "./CommentButton.vue";
 import EllipsisButton from "./EllipsisButton.vue";
+import TextField from "./TextField.vue";
+
+import axios from "axios";
 
 export default {
   emits: ["update-modal-status"],
@@ -110,13 +110,44 @@ export default {
     LikeButton,
     CommentButton,
     EllipsisButton,
+    TextField,
   },
   created() {
-    this.showModal;
+    const showModal = this.showModal;
   },
   methods: {
+    verifyUserLikedPost() {
+      console.log(
+        "LIKEDD",
+        post.likes?.some((object) => object.user.id === 1)
+      );
+      return post.likes?.some((object) => object.user.id === 1);
+    },
     clickLikeButton() {
-      this.isLiked = !this.isLiked;
+      const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);
+      console.log("userLikedPost", userLikedPost);
+      if (!userLikedPost) {
+        console.log("THE POST IS NOW LIKED");
+        this.isLiked = true;
+        axios
+          .post("http://localhost:7002/likePost", { target_id: this.post.id, user_id: 1 })
+          .then((res) => {
+            console.log("hi", res);
+            this.$store.dispatch("getData");
+          });
+      } else {
+        console.log("THE POST IS NOW UNLIKED");
+        this.isLiked = false;
+        axios
+          .post("http://localhost:7002/removeLikePost", {
+            target_id: this.post.id,
+            user_id: 1,
+          })
+          .then((res) => {
+            console.log("BYE", res);
+            this.$store.dispatch("getData");
+          });
+      }
     },
     clickOtherLikesButton() {
       console.log(

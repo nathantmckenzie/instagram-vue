@@ -50,8 +50,35 @@ app.get("/", async (req, res) => {
      INNER JOIN users u ON p.user_id = u.id;
       `
     );
-    console.log("P O S T S", posts.rows);
     res.json({ posts });
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.post("/likePost", async (req, res) => {
+  try {
+    console.log("REQ USER ID", req.body.user_id);
+    console.log("REQ TARGET ID", req.body.target_id);
+    await client.query(
+      `INSERT INTO likes (user_id, target_id, timestamp) VALUES ($1, $2, CURRENT_TIMESTAMP);`,
+      [req.body.user_id, req.body.target_id]
+    );
+    console.log("L I K E S");
+    return res.send("hi");
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.post("/removeLikePost", async (req, res) => {
+  try {
+    await client.query(`DELETE FROM likes WHERE user_id = $1 AND target_id = $2;`, [
+      req.body.user_id,
+      req.body.target_id,
+    ]);
+    console.log("REMOVE L I K E S");
+    return res.send("bye");
   } catch (err) {
     console.log(err);
   }

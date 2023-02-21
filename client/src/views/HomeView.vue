@@ -4,7 +4,7 @@
     <div class="mainPage">
       <MainView
         v-bind:showModal="showModal"
-        :updateModalStatus="updateModalStatus.bind(this)"
+        :updateModalStatus="updateModalStatus"
         @update-modal-status="this.updateModalStatus"
         :show-div="showDiv"
         @update-show-div="updateShowDiv"
@@ -27,6 +27,7 @@
 import NavBar from "../components/NavBar.vue";
 import MainView from "./MainView.vue";
 import Modal from "../components/Modal.vue";
+import AboutView from "./AboutView.vue";
 
 export default {
   name: "HomeView",
@@ -34,6 +35,7 @@ export default {
     NavBar,
     MainView,
     Modal,
+    AboutView,
   },
   emits: {},
   data() {
