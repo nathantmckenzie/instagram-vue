@@ -17,6 +17,6 @@
 
 <script>
 export default {
-  name: "CommentComponent",
+  name: "CommentButton",
 };
 </script>

@@ -1,12 +1,12 @@
 <template>
   <div class="container">
-    <div :key="post.id" v-for="post in $store.state.posts" class="mb-20">
-      <Post
-        :post="post"
-        :showModal="showModal"
-        @update-modal-status="$emit('update-modal-status-test')"
-      />
+    <button @click="toggleShowDiv">Click me</button>
+
+    {{ console.log("this.$store.state.posts", this.$store.state.posts) }}
+    <div :key="post.id" v-for="post in this.$store.state.posts" class="mb-20">
+      <Post :post="post" @update-modal-status="$emit('update-modal-status')" />
     </div>
+    <button @click="toggleShowDiv">Click me</button>
   </div>
 </template>
 
@@ -20,10 +20,22 @@ export default {
   },
   props: {
     showModal: Boolean,
+    showDiv: Boolean,
   },
   computed: {
     console: () => console,
     window: () => window,
+    posts() {
+      return this.$store.state.posts;
+    },
+  },
+  mounted() {
+    this.$store.dispatch("getData");
+  },
+  methods: {
+    toggleShowDiv() {
+      this.$emit("update-show-div");
+    },
   },
 };
 </script>

@@ -4,13 +4,21 @@
     <div class="mainPage">
       <MainView
         v-bind:showModal="showModal"
-        :updateModalStatus="updateModalStatus"
-        @update-modal-status-test="updateModalStatus"
+        :updateModalStatus="updateModalStatus.bind(this)"
+        @update-modal-status="this.updateModalStatus"
+        :show-div="showDiv"
+        @update-show-div="updateShowDiv"
       />
     </div>
-    {{ console.log("showmODAL", showModal) }}
-    {{ console.log("STORE S T A T E", $store.state) }}
-    <Modal v-if="showModal" class="absolute top-0 left-0 right-0 bottom-0 z-20" />
+    {{ console.log("showDiv", this.showDiv) }}
+    <div v-if="this.showModal">
+      {{ console.log("this.showModal", this.showModal) }}
+      <Modal class="absolute top-0 left-0 right-0 bottom-0 z-20" />
+    </div>
+    <div v-if="this.showDiv">
+      {{ console.log(`showDiv is ${this.showDiv}`) }}
+      <div>this div is rendered conditionally based on the prop value</div>
+    </div>
     <div class="stories">Stories</div>
   </div>
 </template>
@@ -27,9 +35,11 @@ export default {
     MainView,
     Modal,
   },
+  emits: {},
   data() {
     return {
-      showModal: false,
+      showModal: true,
+      showDiv: false,
     };
   },
   computed: {
@@ -40,6 +50,10 @@ export default {
     updateModalStatus() {
       this.showModal = !this.showModal;
       console.log("this.showModal", this.showModal);
+    },
+    updateShowDiv() {
+      console.log("HIII");
+      this.showDiv = !this.showDiv;
     },
   },
 };

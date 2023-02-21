@@ -12,7 +12,9 @@ export default createStore({
       state.counter += 150;
     },
     updatePosts(state, posts) {
+      console.log("WHYYYY");
       state.posts = posts;
+      console.log(state.posts);
     },
   },
   actions: {

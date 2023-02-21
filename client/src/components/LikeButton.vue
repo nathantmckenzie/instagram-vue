@@ -17,7 +17,7 @@
 
 <script>
 export default {
-  name: "LikeComponent",
+  name: "LikeButton",
   props: {
     isLiked: Boolean,
   },

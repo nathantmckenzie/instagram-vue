@@ -7,7 +7,7 @@
       <div>
         <img />
         <div>
-          <!-- <b>{{ post.name }}</b> -->
+          <b>{{ post.user.name }}</b>
         </div>
       </div>
       <ellipsis-button />
@@ -74,17 +74,22 @@
       </div>
       <button>Save</button>
     </div>
-    <div class="ml-1" v-if="$store.state.posts.likes.length > 1">
+    <div class="ml-1" v-if="post.likes?.length > 1">
       Liked by
-      {{ isLiked ? "nathantmckenzie" : $store.state.posts.likes[0].user.name }} and others
+      {{ isLiked ? "nathantmckenzie" : post?.likes[0].user.name }}
+      <span @click="clickOtherLikesButton">and others</span>
     </div>
     <div class="ml-1" v-else>
-      Liked by {{ isLiked ? "nathantmckenzie" : $store.state.posts.likes[0].user.name }}
+      Liked by {{ isLiked ? "nathantmckenzie" : post?.likes[0].user.name }}
     </div>
-    <!-- <div class="m-1">
-      <b>{{ post.name }}</b> {{ post.content }}
-    </div> -->
-    <div class="m-1">comments</div>
+    <div class="m-1">
+      <b>{{ post.user.name }}</b> {{ post.content }}
+    </div>
+    <div :key="comment?.id" class="m-1" v-for="comment in post?.comments">
+      <div>
+        <b>{{ comment?.user.name }}</b> {{ comment?.content }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -95,6 +100,7 @@ import CommentButton from "./CommentButton.vue";
 import EllipsisButton from "./EllipsisButton.vue";
 
 export default {
+  emits: ["update-modal-status"],
   props: {
     post: Object,
     showModal: Boolean,
@@ -112,7 +118,12 @@ export default {
     clickLikeButton() {
       this.isLiked = !this.isLiked;
     },
-
+    clickOtherLikesButton() {
+      console.log(
+        "OTHER LIKES",
+        this.post.likes?.map((like) => like.user.name)
+      );
+    },
     getNextImage() {
       if (this.currentImage + 1 < this.images.length) {
         this.currentImage += 1;
