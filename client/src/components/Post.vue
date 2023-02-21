@@ -64,7 +64,7 @@
     </div>
     <div class="flex justify-between m-2">
       <div class="flex flex-row">
-        <like-button :isLiked="isLiked" @click="clickLikeButton" />
+        <like-button :isLiked="this.isLiked" @click="clickLikeButton" />
         <comment-button @click="$emit('update-modal-status')" />
         <button class="icons">Send</button>
       </div>
@@ -115,13 +115,21 @@ export default {
   created() {
     const showModal = this.showModal;
   },
+  mounted() {
+    this.isLiked = this.verifyUserLikedPost();
+  },
   methods: {
     verifyUserLikedPost() {
       console.log(
         "LIKEDD",
-        post.likes?.some((object) => object.user.id === 1)
+        this.post.likes?.some((object) => object.user.id === 1)
       );
-      return post.likes?.some((object) => object.user.id === 1);
+      this.$store.dispatch("getData");
+      if (this.post.likes?.some((object) => object.user.id === 1)) {
+        return true;
+      } else {
+        return false;
+      }
     },
     clickLikeButton() {
       const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);

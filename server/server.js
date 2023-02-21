@@ -58,8 +58,6 @@ app.get("/", async (req, res) => {
 
 app.post("/likePost", async (req, res) => {
   try {
-    console.log("REQ USER ID", req.body.user_id);
-    console.log("REQ TARGET ID", req.body.target_id);
     await client.query(
       `INSERT INTO likes (user_id, target_id, timestamp) VALUES ($1, $2, CURRENT_TIMESTAMP);`,
       [req.body.user_id, req.body.target_id]

@@ -10,9 +10,7 @@
         @update-show-div="updateShowDiv"
       />
     </div>
-    {{ console.log("showDiv", this.showDiv) }}
     <div v-if="this.showModal">
-      {{ console.log("this.showModal", this.showModal) }}
       <Modal class="absolute top-0 left-0 right-0 bottom-0 z-20" />
     </div>
     <div v-if="this.showDiv">
