@@ -83,10 +83,17 @@
     </div>
     <div :key="comment?.id" class="m-1" v-for="comment in post.comments">
       <div>
-        <b>{{ comment?.user.name }}</b> {{ comment?.content }}
+        <b>{{ comment?.user.name }}</b
+        ><span class="ml-1" @dblclick="removeCommentFromPost">{{
+          comment?.content
+        }}</span>
       </div>
     </div>
-    <text-field />
+    <text-field
+      :addCommentToPost="addCommentToPost"
+      :value="textFieldInput"
+      @update:value="textFieldInput = $event"
+    />
   </div>
 </template>
 
@@ -120,10 +127,6 @@ export default {
   },
   methods: {
     verifyUserLikedPost() {
-      console.log(
-        "LIKEDD",
-        this.post.likes?.some((object) => object.user.id === 1)
-      );
       this.$store.dispatch("getData");
       if (this.post.likes?.some((object) => object.user.id === 1)) {
         return true;
@@ -133,18 +136,14 @@ export default {
     },
     clickLikeButton() {
       const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);
-      console.log("userLikedPost", userLikedPost);
       if (!userLikedPost) {
-        console.log("THE POST IS NOW LIKED");
         this.isLiked = true;
         axios
           .post("http://localhost:7002/likePost", { target_id: this.post.id, user_id: 1 })
           .then((res) => {
-            console.log("hi", res);
             this.$store.dispatch("getData");
           });
       } else {
-        console.log("THE POST IS NOW UNLIKED");
         this.isLiked = false;
         axios
           .post("http://localhost:7002/removeLikePost", {
@@ -152,7 +151,6 @@ export default {
             user_id: 1,
           })
           .then((res) => {
-            console.log("BYE", res);
             this.$store.dispatch("getData");
           });
       }
@@ -168,17 +166,42 @@ export default {
         this.currentImage += 1;
       }
     },
-
     getPreviousImage() {
       if (this.currentImage > 0) {
         this.currentImage -= 1;
       }
+    },
+    addCommentToPost(e) {
+      e.preventDefault();
+      console.log("AD COMMENT TO POST");
+      axios
+        .post("http://localhost:7002/addCommentPost", {
+          content: this.textFieldInput,
+          user_id: 1,
+          post_id: this.post.id,
+        })
+        .then((res) => {
+          this.$store.dispatch("getData");
+          this.textFieldInput = "";
+        });
+    },
+    removeCommentFromPost() {
+      console.log("bye");
+      axios
+        .post("http://localhost:7002/removeCommentPost", {
+          user_id: 1,
+          post_id: this.post.id,
+        })
+        .then((res) => {
+          this.$store.dispatch("getData");
+        });
     },
   },
   data() {
     return {
       isLiked: false,
       currentImage: 0,
+      textFieldInput: "",
       images: [
         "https://www.bhg.com/thmb/3Vf9GXp3T-adDlU6tKpTbb-AEyE=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/white-modern-house-curved-patio-archway-c0a4a3b3-aa51b24d14d0464ea15d36e05aa85ac9.jpg",
         "https://thumbor.forbes.com/thumbor/fit-in/900x510/https://www.forbes.com/home-improvement/wp-content/uploads/2022/07/download-23.jpg",
