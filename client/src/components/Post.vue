@@ -88,6 +88,7 @@
           comment?.content
         }}</span>
       </div>
+      <div>{{ timeSinceCommentWasPosted(comment.timestamp, comment.content) }}</div>
     </div>
     <text-field
       :addCommentToPost="addCommentToPost"
@@ -124,6 +125,7 @@ export default {
   },
   mounted() {
     this.isLiked = this.verifyUserLikedPost();
+    // setInterval(this.updateTimeAgo, 1000);
   },
   methods: {
     verifyUserLikedPost() {
@@ -196,12 +198,49 @@ export default {
           this.$store.dispatch("getData");
         });
     },
+    timeSinceCommentWasPosted(time) {
+      // Create a new date object from the timestamp in GMT
+      const gmtDate = new Date(time);
+
+      // Get the timezone offset for the PST timezone
+      const pstOffset = -8 * 60; // PST is 8 hours behind GMT
+
+      // Convert the timestamp from GMT to PST by subtracting the timezone offset
+      const pstTimestamp = gmtDate.getTime() + pstOffset * 60 * 1000;
+
+      const diffMs = new Date() - new Date(pstTimestamp);
+
+      // Calculate the difference in seconds, minutes, hours, days, and weeks
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+
+      if (diffSecs <= 1) {
+        return "Now";
+      } else if (diffSecs > 1 && diffSecs <= 59) {
+        return `${diffSecs}s`;
+      } else if (diffSecs > 59 && diffMins <= 59) {
+        return `${diffMins}m`;
+      } else if (diffMins > 59 && diffHours <= 23) {
+        return `${diffHours}h`;
+      } else if (diffHours > 23 && diffDays <= 6) {
+        return `${diffDays}d`;
+      } else if (diffDays > 6) {
+        return `${diffWeeks}w`;
+      }
+    },
+    updateTimeAgo(timestamp) {
+      this.timeAgoComment = this.timeSinceCommentWasPosted(timestamp);
+    },
   },
   data() {
     return {
       isLiked: false,
       currentImage: 0,
       textFieldInput: "",
+      timeAgoComment: "",
       images: [
         "https://www.bhg.com/thmb/3Vf9GXp3T-adDlU6tKpTbb-AEyE=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/white-modern-house-curved-patio-archway-c0a4a3b3-aa51b24d14d0464ea15d36e05aa85ac9.jpg",
         "https://thumbor.forbes.com/thumbor/fit-in/900x510/https://www.forbes.com/home-improvement/wp-content/uploads/2022/07/download-23.jpg",
