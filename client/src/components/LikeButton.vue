@@ -5,7 +5,7 @@
     viewBox="0 0 24 24"
     strokeWidth="{0.3}"
     stroke="black"
-    class="w-7"
+    :class="width"
   >
     <path
       strokeLinecap="round"
@@ -20,6 +20,11 @@ export default {
   name: "LikeButton",
   props: {
     isLiked: Boolean,
+    width: Number,
+  },
+  computed: {
+    console: () => console,
+    window: () => window,
   },
 };
 </script>
