@@ -3,47 +3,62 @@
     class="w-full h-full border-2 border-black mt-20 mb-20 flex flex-col items-between relative"
   >
     <div class="flex justify-between m-1">
-      <div>
-        <img />
-        <div>
-          <b>{{ post.user.name }}</b>
+      <div class="flex flex-row">
+        <img :src="post.user.profile_picture" class="rounded-full w-10 h-10 mr-3" />
+        <div class="flex items-start flex-col">
+          <div>
+            <span>
+              <b>{{ post.user.name }}</b></span
+            >
+            <span class="ml-1">{{ timeSinceCommentWasPosted(post.timestamp) }}</span>
+          </div>
+          <div>{{ post.location }}</div>
         </div>
       </div>
       <ellipsis-button />
     </div>
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke-width="1.5"
-      stroke="currentColor"
-      class="w-6 h-6 absolute bg-black z-20 left-0 bottom-2/4"
-      @click="getPreviousImage"
-      v-if="currentImage !== 0"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <img :src="images[currentImage]" class="mt-10 w-[600px] h-96 object-cover" />
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke-width="1.5"
-      stroke="currentColor"
-      class="w-6 h-6 absolute bg-black z-20 right-0 bottom-2/4"
-      @click="getNextImage"
-      v-if="currentImage !== images.length - 1"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
+    <div v-if="post.id !== 1">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-6 h-6 absolute bg-black z-20 left-0 bottom-2/4"
+        @click="getPreviousImage"
+        v-if="currentImage !== 0"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <img :src="images[currentImage]" class="mt-10 w-[600px] h-96 object-cover" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-6 h-6 absolute bg-black z-20 right-0 bottom-2/4"
+        @click="getNextImage"
+        v-if="currentImage !== images.length - 1"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </div>
+    <div v-if="post.id === 1">
+      <video width="320" height="240" controls>
+        <source :src="post.content" type="video/mp4" />
+        <source :src="post.content" type="video/ogg" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
     <div class="flex flex-row absolute z-20 left-2/4 bottom-1/3">
       <div :key="index" v-for="(photo, index) in images.length">
         <svg
@@ -64,7 +79,7 @@
     </div>
     <div class="flex justify-between m-2">
       <div class="flex flex-row">
-        <like-button :isLiked="this.isLiked" @click="clickLikeButton" />
+        <like-button :isLiked="this.isLiked" @click="clickLikeButton" width="w-7" />
         <comment-button @click="$emit('update-modal-status')" />
         <button class="icons">Send</button>
       </div>
@@ -75,20 +90,33 @@
       {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
       <span @click="clickOtherLikesButton">and others</span>
     </div>
-    <div class="ml-1" v-else>
+    <div class="ml-1" v-else-if="post.likes?.length === 1">
       Liked by {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
     </div>
     <div class="m-1">
-      <b>{{ post.user.name }}</b> {{ post.content }}
+      <b>{{ post.user.name }}</b> {{ post.caption }}
     </div>
-    <div :key="comment?.id" class="m-1" v-for="comment in post.comments">
-      <div>
-        <b>{{ comment?.user.name }}</b
-        ><span class="ml-1" @dblclick="removeCommentFromPost">{{
-          comment?.content
-        }}</span>
+    <div v-if="post.comments?.length > 0">
+      <div :key="comment.id" class="m-1" v-for="comment in post.comments">
+        <div class="flex justify-between">
+          <div>
+            <b>{{ comment.user.name }}</b
+            ><span class="ml-1" @dblclick="removeCommentFromPost">{{
+              comment?.content
+            }}</span>
+          </div>
+          <like-button width="w-4" class="mr-2" />
+        </div>
+        <div class="flex flex-row align-middle">
+          <span class="mr-2">{{
+            timeSinceCommentWasPosted(comment.timestamp, comment.content)
+          }}</span>
+          <button class="mr-2">Reply</button>
+          <div class="hide-ellipsis">
+            <ellipsis-button />
+          </div>
+        </div>
       </div>
-      <div>{{ timeSinceCommentWasPosted(comment.timestamp, comment.content) }}</div>
     </div>
     <text-field
       :addCommentToPost="addCommentToPost"
@@ -125,7 +153,6 @@ export default {
   },
   mounted() {
     this.isLiked = this.verifyUserLikedPost();
-    // setInterval(this.updateTimeAgo, 1000);
   },
   methods: {
     verifyUserLikedPost() {
@@ -157,6 +184,10 @@ export default {
           });
       }
     },
+    // clickLikeCommentButton() {
+    //   const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);
+
+    // },
     clickOtherLikesButton() {
       console.log(
         "OTHER LIKES",
@@ -175,20 +206,18 @@ export default {
     },
     addCommentToPost(e) {
       e.preventDefault();
-      console.log("AD COMMENT TO POST");
       axios
         .post("http://localhost:7002/addCommentPost", {
           content: this.textFieldInput,
           user_id: 1,
           post_id: this.post.id,
         })
-        .then((res) => {
-          this.$store.dispatch("getData");
+        .then(() => {
           this.textFieldInput = "";
+          this.$store.dispatch("getData");
         });
     },
     removeCommentFromPost() {
-      console.log("bye");
       axios
         .post("http://localhost:7002/removeCommentPost", {
           user_id: 1,
@@ -231,12 +260,16 @@ export default {
         return `${diffWeeks}w`;
       }
     },
-    updateTimeAgo(timestamp) {
-      this.timeAgoComment = this.timeSinceCommentWasPosted(timestamp);
+    showButton() {
+      this.showEllipsis = true;
+    },
+    hideButton() {
+      this.showEllipsis = false;
     },
   },
   data() {
     return {
+      showEllipsis: false,
       isLiked: false,
       currentImage: 0,
       textFieldInput: "",
@@ -293,5 +326,11 @@ export default {
 .icon-row {
   display: flex;
   justify-content: space-between;
+}
+.hide-ellipsis {
+  display: none;
+}
+.hide-ellipsis:hover {
+  display: hide;
 }
 </style>

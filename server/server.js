@@ -18,9 +18,12 @@ app.get("/", async (req, res) => {
       SELECT
       p.id,
       p.content,
+      p.caption,
+      p.location,
       json_build_object(
         'id', u.id,
-        'name', u.name
+        'name', u.name,
+        'profile_picture', u.profile_picture
       ) as user,
       p.timestamp,
       (
