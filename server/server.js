@@ -30,7 +30,7 @@ app.get("/", async (req, res) => {
         SELECT json_agg(
           json_build_object(
             'id', l.id,
-            'user', json_build_object('id', lu.id, 'name', lu.name),
+            'user', json_build_object('id', lu.id, 'name', lu.name, 'profile_picture', lu.profile_picture),
             'target_id', l.target_id,
             'timestamp', l.timestamp
           )

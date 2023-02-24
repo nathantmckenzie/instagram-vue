@@ -6,16 +6,21 @@
         v-bind:showModal="showModal"
         :updateModalStatus="updateModalStatus"
         @update-modal-status="this.updateModalStatus"
-        :show-div="showDiv"
-        @update-show-div="updateShowDiv"
+        v-on:likes-updated="handleLikesUpdated"
       />
-    </div>
-    <div v-if="this.showModal">
-      <Modal class="absolute top-0 left-0 right-0 bottom-0 z-20" />
-    </div>
-    <div v-if="this.showDiv">
-      {{ console.log(`showDiv is ${this.showDiv}`) }}
-      <div>this div is rendered conditionally based on the prop value</div>
+      <!-- <Modal class="mt-1/2" innerRef="modalContainer" /> -->
+      <dialog class="modal rounded" ref="modalContainer">
+        <div @click="closeModal">x</div>
+        <div class="innerModal">
+          <h1>Likes</h1>
+          <ul>
+            <li v-for="like in likes" :key="like.id" class="likeRow">
+              <img :src="like.user.profile_picture" class="profilePicture" />
+              {{ like.user.name }}
+            </li>
+          </ul>
+        </div>
+      </dialog>
     </div>
     <div class="stories">Stories</div>
   </div>
@@ -38,8 +43,9 @@ export default {
   emits: {},
   data() {
     return {
-      showModal: true,
-      showDiv: false,
+      showModal: false,
+      hasEventListener: false,
+      likes: [],
     };
   },
   computed: {
@@ -48,12 +54,14 @@ export default {
   },
   methods: {
     updateModalStatus() {
-      this.showModal = !this.showModal;
-      console.log("this.showModal", this.showModal);
+      this.$refs.modalContainer.showModal();
     },
-    updateShowDiv() {
-      console.log("HIII");
-      this.showDiv = !this.showDiv;
+    closeModal() {
+      this.$refs.modalContainer.close();
+    },
+    handleLikesUpdated(likes) {
+      console.log("LIKES BABYYYY", likes);
+      this.likes = likes;
     },
   },
 };
@@ -78,16 +86,19 @@ export default {
 }
 
 .modal {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 20;
+  width: 350px;
+  height: 400px;
+  border-radius: 10px;
+}
+
+.innerModal {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
 }
 
 .mainPage {
-  width: 60%;
+  width: 800px;
   border-style: solid;
   display: flex;
   justify-content: center;
@@ -104,6 +115,15 @@ export default {
   border-style: solid;
   position: relative;
   z-index: 0;
+}
+
+.profilePicture {
+  width: 30px;
+  border-radius: 50%;
+}
+
+.likeRow {
+  margin-bottom: 20px;
 }
 
 @media (min-width: 0px) and (max-width: 1100px) {

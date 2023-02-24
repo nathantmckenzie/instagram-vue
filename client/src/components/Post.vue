@@ -17,7 +17,7 @@
       </div>
       <ellipsis-button />
     </div>
-    <div v-if="post.id !== 1">
+    <div v-if="post.id !== 1 && post.id !== 8">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -52,12 +52,30 @@
         />
       </svg>
     </div>
-    <div v-if="post.id === 1">
-      <video width="320" height="240" controls>
-        <source :src="post.content" type="video/mp4" />
-        <source :src="post.content" type="video/ogg" />
-        Your browser does not support the video tag.
-      </video>
+    <div v-if="post.id === 1 || post.id === 8">
+      <div ref="videoContainer" class="video-container">
+        <video
+          ref="videoPlayer"
+          width="320"
+          height="240"
+          autoplay
+          muted
+          @play="onPlay"
+          @pause="onPause"
+        >
+          <source :src="post.content" type="video/mp4" />
+          <source :src="post.content" type="video/ogg" />
+          Your browser does not support the video tag.
+        </video>
+        <div class="play-overlay" v-if="!isVideoPlaying" @click="onOverlayClick">
+          <svg class="play-button" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M26.109 14.016l-18.328-10.593c-1.172-.703-2.672-.141-2.672 1.328v21.094c0 1.469 1.5 2.031 2.672 1.328l18.328-10.594c1.078-.625 1.078-2.187 0-2.813z"
+              fill="#fff"
+            />
+          </svg>
+        </div>
+      </div>
     </div>
     <div class="flex flex-row absolute z-20 left-2/4 bottom-1/3">
       <div :key="index" v-for="(photo, index) in images.length">
@@ -80,7 +98,7 @@
     <div class="flex justify-between m-2">
       <div class="flex flex-row">
         <like-button :isLiked="this.isLiked" @click="clickLikeButton" width="w-7" />
-        <comment-button @click="$emit('update-modal-status')" />
+        <comment-button />
         <button class="icons">Send</button>
       </div>
       <button>Save</button>
@@ -88,7 +106,7 @@
     <div class="ml-1" v-if="post.likes?.length > 1">
       Liked by
       {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
-      <span @click="clickOtherLikesButton">and others</span>
+      and <span @click="clickOtherLikesButton"><b>others</b></span>
     </div>
     <div class="ml-1" v-else-if="post.likes?.length === 1">
       Liked by {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
@@ -153,6 +171,29 @@ export default {
   },
   mounted() {
     this.isLiked = this.verifyUserLikedPost();
+    this.videoPlayer = this.$refs.videoPlayer;
+    this.observer = new IntersectionObserver(this.handleIntersection, {
+      threshold: this.intersectionRatio,
+    });
+    this.$nextTick(() => {
+      this.observer.observe(this.$refs.videoContainer);
+      this.videoPlayer.addEventListener("ended", () => {
+        this.videoPlayer.currentTime = 0; // Reset the video playback to the beginning
+        this.videoPlayer.play(); // Restart the video playback
+      });
+
+      // Add a click event listener to the video element
+      this.videoPlayer.addEventListener("click", () => {
+        // Check if the video is currently paused
+        if (this.videoPlayer.paused) {
+          // If the video is paused, play it
+          this.videoPlayer.play();
+        } else {
+          // If the video is playing, pause it
+          this.videoPlayer.pause();
+        }
+      });
+    });
   },
   methods: {
     verifyUserLikedPost() {
@@ -189,10 +230,10 @@ export default {
 
     // },
     clickOtherLikesButton() {
-      console.log(
-        "OTHER LIKES",
-        this.post.likes?.map((like) => like.user.name)
-      );
+      this.likes = this.post.likes;
+      console.log("OTHER LIKES", this.likes);
+      this.$emit("likes-updated", this.likes);
+      this.$emit("update-modal-status");
     },
     getNextImage() {
       if (this.currentImage + 1 < this.images.length) {
@@ -266,9 +307,32 @@ export default {
     hideButton() {
       this.showEllipsis = false;
     },
+    handleIntersection(entries) {
+      console.log("VIDEO INTERSECTED");
+      if (entries[0].intersectionRatio >= this.intersectionRatio) {
+        this.videoPlayer.play();
+      } else {
+        this.videoPlayer.pause();
+      }
+    },
+    onPlay() {
+      this.isVideoPlaying = true;
+    },
+    onPause() {
+      this.isVideoPlaying = false;
+    },
+    onOverlayClick() {
+      // When the overlay is clicked, hide the overlay and play the video
+      this.isVideoPlaying = true;
+      this.$refs.videoPlayer.play();
+    },
   },
   data() {
     return {
+      isVideoPlaying: false,
+      intersectionRatio: 0.5,
+      videoPlayer: null,
+      observer: null,
       showEllipsis: false,
       isLiked: false,
       currentImage: 0,
@@ -279,7 +343,11 @@ export default {
         "https://thumbor.forbes.com/thumbor/fit-in/900x510/https://www.forbes.com/home-improvement/wp-content/uploads/2022/07/download-23.jpg",
         "https://www.nerdwallet.com/ca/wp-content/uploads/sites/2/2021/09/types-of-houses-in-canada-e1631808979346-1536x637.jpg",
       ],
+      likes: [],
     };
+  },
+  beforeUnmount() {
+    this.observer.unobserve(this.$refs.videoContainer);
   },
   computed: {
     console: () => console,
@@ -332,5 +400,28 @@ export default {
 }
 .hide-ellipsis:hover {
   display: hide;
+}
+
+.video-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.play-button {
+  width: 50px;
+  height: 50px;
+  fill: #fff;
 }
 </style>
