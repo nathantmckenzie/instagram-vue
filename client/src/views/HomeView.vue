@@ -8,15 +8,26 @@
         @update-modal-status="this.updateModalStatus"
         v-on:likes-updated="handleLikesUpdated"
       />
-      <!-- <Modal class="mt-1/2" innerRef="modalContainer" /> -->
-      <dialog class="modal rounded" ref="modalContainer">
+      <dialog class="modal" ref="modalContainer">
         <div @click="closeModal">x</div>
         <div class="innerModal">
           <h1>Likes</h1>
           <ul>
             <li v-for="like in likes" :key="like.id" class="likeRow">
-              <img :src="like.user.profile_picture" class="profilePicture" />
-              {{ like.user.name }}
+              <div>
+                <img :src="like.user.profile_picture" class="profilePicture" />
+                {{ like.user.name }}
+              </div>
+              <button
+                v-if="like.user.id !== 1"
+                @click="
+                  followerListIDs.includes(like.user.id)
+                    ? unfollow(like.user.id, 1)
+                    : follow(like.user.id, 1)
+                "
+              >
+                {{ followerListIDs.includes(like.user.id) ? "Following" : "Follow" }}
+              </button>
             </li>
           </ul>
         </div>
@@ -32,6 +43,8 @@ import MainView from "./MainView.vue";
 import Modal from "../components/Modal.vue";
 import AboutView from "./AboutView.vue";
 
+import axios from "axios";
+
 export default {
   name: "HomeView",
   components: {
@@ -46,6 +59,7 @@ export default {
       showModal: false,
       hasEventListener: false,
       likes: [],
+      followerListIDs: [],
     };
   },
   computed: {
@@ -59,9 +73,42 @@ export default {
     closeModal() {
       this.$refs.modalContainer.close();
     },
-    handleLikesUpdated(likes) {
-      console.log("LIKES BABYYYY", likes);
+    async handleLikesUpdated(likes) {
       this.likes = likes;
+      await this.$store.dispatch("getFollowerList");
+      console.log("YEEE FOLLOWER LST", this.$store.state.followerList);
+      this.followerListIDs = this.$store.state.followerList.map((item) => item.target_id);
+      console.log("follower LIST IDD", this.followerListIDs);
+    },
+    follow(targetID, followerID) {
+      axios
+        .post("http://localhost:7002/follow", {
+          target_id: targetID,
+          follower_id: followerID,
+        })
+        .then(() => {
+          this.$store.dispatch("getFollowerList").then(() => {
+            this.followerListIDs = this.$store.state.followerList.map(
+              (item) => item.target_id
+            );
+            console.log("follower LIST IDD", this.followerListIDs);
+          });
+        });
+    },
+    unfollow(targetID, followerID) {
+      axios
+        .post("http://localhost:7002/unfollow", {
+          target_id: targetID,
+          follower_id: followerID,
+        })
+        .then(() => {
+          this.$store.dispatch("getFollowerList").then(() => {
+            this.followerListIDs = this.$store.state.followerList.map(
+              (item) => item.target_id
+            );
+            console.log("follower LIST IDD", this.followerListIDs);
+          });
+        });
     },
   },
 };
@@ -124,6 +171,8 @@ export default {
 
 .likeRow {
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
 }
 
 @media (min-width: 0px) and (max-width: 1100px) {

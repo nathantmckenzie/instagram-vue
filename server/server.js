@@ -119,6 +119,47 @@ app.post("/removeCommentPost", async (req, res) => {
   }
 });
 
+app.get("/getFollowerList/:userId", async (req, res) => {
+  try {
+    const followerList = await client.query(
+      `SELECT * FROM follower_map WHERE follower_id = $1`,
+      [req.params.userId]
+    );
+    console.log("G E T  F O L L O W E R  L I S T");
+    return res.json({ followerList });
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.post("/follow", async (req, res) => {
+  try {
+    console.log("req.body", req.body);
+    await client.query(
+      `INSERT INTO follower_map (target_id, follower_id, timestamp) VALUES ($1, $2, CURRENT_TIMESTAMP);`,
+      [req.body.target_id, req.body.follower_id]
+    );
+    console.log("F O L L O W");
+    return res.send("bye");
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.post("/unfollow", async (req, res) => {
+  try {
+    console.log("req.body", req.body);
+    await client.query(
+      `DELETE FROM follower_map WHERE target_id = $1 AND follower_id = $2;`,
+      [req.body.target_id, req.body.follower_id]
+    );
+    console.log("U N F O L L O W");
+    return res.send("bye");
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
