@@ -21,12 +21,12 @@
               <button
                 v-if="like.user.id !== 1"
                 @click="
-                  followerListIDs.includes(like.user.id)
+                  followListIDs.includes(like.user.id)
                     ? unfollow(like.user.id, 1)
                     : follow(like.user.id, 1)
                 "
               >
-                {{ followerListIDs.includes(like.user.id) ? "Following" : "Follow" }}
+                {{ followListIDs.includes(like.user.id) ? "Following" : "Follow" }}
               </button>
             </li>
           </ul>
@@ -59,7 +59,7 @@ export default {
       showModal: false,
       hasEventListener: false,
       likes: [],
-      followerListIDs: [],
+      followListIDs: [],
     };
   },
   computed: {
@@ -75,10 +75,10 @@ export default {
     },
     async handleLikesUpdated(likes) {
       this.likes = likes;
-      await this.$store.dispatch("getFollowerList");
-      console.log("YEEE FOLLOWER LST", this.$store.state.followerList);
-      this.followerListIDs = this.$store.state.followerList.map((item) => item.target_id);
-      console.log("follower LIST IDD", this.followerListIDs);
+      await this.$store.dispatch("getFollowingList");
+      this.followListIDs = this.$store.state.followList.following.map(
+        (item) => item.target_id
+      );
     },
     follow(targetID, followerID) {
       axios
@@ -87,11 +87,10 @@ export default {
           follower_id: followerID,
         })
         .then(() => {
-          this.$store.dispatch("getFollowerList").then(() => {
-            this.followerListIDs = this.$store.state.followerList.map(
+          this.$store.dispatch("getFollowingList").then(() => {
+            this.followListIDs = this.$store.state.followList.following.map(
               (item) => item.target_id
             );
-            console.log("follower LIST IDD", this.followerListIDs);
           });
         });
     },
@@ -102,11 +101,10 @@ export default {
           follower_id: followerID,
         })
         .then(() => {
-          this.$store.dispatch("getFollowerList").then(() => {
-            this.followerListIDs = this.$store.state.followerList.map(
+          this.$store.dispatch("getFollowingList").then(() => {
+            this.followListIDs = this.$store.state.followList.following.map(
               (item) => item.target_id
             );
-            console.log("follower LIST IDD", this.followerListIDs);
           });
         });
     },

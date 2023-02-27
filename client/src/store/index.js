@@ -6,7 +6,9 @@ export default createStore({
     counter: 100,
     posts: [],
     likes: [],
-    followerList: [],
+    followList: [],
+    user: [],
+    userPosts: [],
   },
   getters: {},
   mutations: {
@@ -16,22 +18,37 @@ export default createStore({
     updatePosts(state, posts) {
       state.posts = posts;
     },
-    updateFollowerList(state, followerList) {
-      state.followerList = followerList;
-      console.log("line 21 mfff", state.followerList);
+    updateFollowingList(state, followingList) {
+      state.followList = followingList;
+      console.log("STATE", state.followList);
+    },
+    updateProfileData(state, payload) {
+      state.userPosts = payload.posts;
+      state.user = payload.userData;
     },
   },
   actions: {
     getData({ commit }) {
       return axios("http://localhost:7002/").then((res) => {
-        console.log("RESSS", res.data.posts.rows);
         commit("updatePosts", res.data.posts.rows);
       });
     },
-    getFollowerList({ commit }) {
-      return axios("http://localhost:7002/getFollowerList/1").then((res) => {
-        console.log("FOLLOWER LIST!!!", res.data.followerList.rows);
-        commit("updateFollowerList", res.data.followerList.rows);
+    getFollowingList({ commit }) {
+      return axios("http://localhost:7002/getFollowingList/1").then((res) => {
+        const payload = {
+          followers: res.data.followerList.rows,
+          following: res.data.followingList.rows,
+        };
+        commit("updateFollowingList", payload);
+      });
+    },
+    getProfileData({ commit }) {
+      return axios("http://localhost:7002/profile/1").then((res) => {
+        const payload = {
+          userData: res.data.userData.rows[0],
+          posts: res.data.posts.rows,
+        };
+        commit("updateProfileData", payload);
       });
     },
   },

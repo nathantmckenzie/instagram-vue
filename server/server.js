@@ -58,7 +58,12 @@ app.get("/", async (req, res) => {
         INNER JOIN users cu ON c.user_id = cu.id
       ) as comments
     FROM posts p
-    INNER JOIN users u ON p.user_id = u.id;
+    INNER JOIN users u ON p.user_id = u.id
+    WHERE p.user_id IN (
+      SELECT target_id
+      FROM follower_map
+      WHERE follower_id = 1
+    );
       `
     );
     res.json({ posts });
@@ -119,14 +124,18 @@ app.post("/removeCommentPost", async (req, res) => {
   }
 });
 
-app.get("/getFollowerList/:userId", async (req, res) => {
+app.get("/getFollowingList/:userId", async (req, res) => {
   try {
-    const followerList = await client.query(
+    const followingList = await client.query(
       `SELECT * FROM follower_map WHERE follower_id = $1`,
       [req.params.userId]
     );
-    console.log("G E T  F O L L O W E R  L I S T");
-    return res.json({ followerList });
+    const followerList = await client.query(
+      `SELECT * FROM follower_map WHERE target_id = $1`,
+      [req.params.userId]
+    );
+    console.log("G E T  F O L L O W I N G  L I S T", followingList);
+    return res.json({ followingList, followerList });
   } catch (err) {
     console.log(err);
   }
@@ -155,6 +164,80 @@ app.post("/unfollow", async (req, res) => {
     );
     console.log("U N F O L L O W");
     return res.send("bye");
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+app.get("/profile/:userID", async (req, res) => {
+  try {
+    const userData = await client.query(
+      `
+      SELECT 
+        id,
+        username,
+        name,
+        email,
+        profile_picture,
+        timestamp
+      FROM users
+      WHERE users.id = $1;
+     `,
+      [req.params.userID]
+    );
+
+    const posts = await client.query(
+      `
+      SELECT
+      p.id,
+      p.content,
+      p.caption,
+      p.location,
+      json_build_object(
+        'id', u.id,
+        'name', u.name,
+        'profile_picture', u.profile_picture
+      ) as user,
+      p.timestamp,
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', l.id,
+            'user', json_build_object('id', lu.id, 'name', lu.name, 'profile_picture', lu.profile_picture),
+            'target_id', l.target_id,
+            'timestamp', l.timestamp
+          )
+        )
+        FROM likes l
+        INNER JOIN users lu ON l.user_id = lu.id
+        WHERE l.target_id = p.id
+      ) as likes,
+      (
+        SELECT json_agg(
+          json_build_object(
+            'id', c.id,
+            'content', c.content,
+            'post_id', c.post_id,
+            'user', json_build_object('id', cu.id, 'name', cu.name),
+            'timestamp', c.timestamp
+          )
+        )
+        FROM (
+          SELECT *
+          FROM comments
+          WHERE post_id = p.id
+          ORDER BY id ASC
+        ) c
+        INNER JOIN users cu ON c.user_id = cu.id
+      ) as comments
+    FROM posts p
+    INNER JOIN users u ON p.user_id = u.id
+    WHERE p.user_id = $1
+    ;`,
+      [req.params.userID]
+    );
+    console.log("G E T  P RO F ILE ");
+    return res.json({ userData, posts });
   } catch (err) {
     console.log(err);
   }
