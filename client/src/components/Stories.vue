@@ -70,22 +70,15 @@ export default {
   margin-left: 40px;
 }
 
-.story {
-  height: 400px;
-  width: 200px;
-  background-color: black;
-  border-radius: 5%;
-  margin-right: 50px;
-}
-
 .first-feature-story {
-  margin-left: 1000px;
+  margin-left: 1200px;
   height: 500px;
   width: 300px;
   background-color: black;
   border-radius: 5%;
   margin-right: 50px;
   transform: scale(1.2);
+  color: white;
 }
 
 .second-feature-story {
@@ -96,6 +89,7 @@ export default {
   border-radius: 5%;
   margin-right: 50px;
   transform: scale(1.2);
+  color: white;
 }
 
 .feature-story {
@@ -105,15 +99,7 @@ export default {
   border-radius: 5%;
   margin-right: 50px;
   transform: scale(1.2);
-}
-
-.middle-story {
-  height: 500px;
-  width: 420px;
-  background-color: black;
-  border-radius: 5%;
-  margin-right: 50px;
-  transform: scale(1.2);
+  color: white;
 }
 
 .secondary-story {
@@ -122,5 +108,6 @@ export default {
   background-color: black;
   border-radius: 5%;
   margin-right: 50px;
+  color: white;
 }
 </style>
