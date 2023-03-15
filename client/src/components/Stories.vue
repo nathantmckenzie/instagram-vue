@@ -1,12 +1,14 @@
 <template>
   <div class="container">
-    <div v-for="(story, index) of stories" :key="index">
-      <!-- <div v-for="(story, index) of this.$store.state.stories" :key="index"> -->
+    <!-- {{ console.log(this.$store.state.stories) }} -->
+    <!-- <div v-for="(story, index) of stories" :key="index"> -->
+    <div v-for="(story, index) of this.$store.state.stories" :key="index">
       <div
         @click.stop.prevent="changeStory(index)"
         :class="getClass(index)"
         v-if="this.currentStoryIndex - index < 3"
       >
+        {{ this.resumeProgressBar ? startProgress(index) : null }}
         <div v-if="index === this.currentStoryIndex">
           <div class="progress-bar">
             <div
@@ -16,28 +18,47 @@
               }"
             ></div>
           </div>
-          {{ this.resumeProgressBar ? startProgress(index) : null }}
-          <button @click="stopProgress">
-            {{ resumeProgressBar ? "Stop" : "Start" }}
-          </button>
+          <div class="top-row">
+            <div class="profile-name">
+              <img :src="story.user.profile_picture" class="profile_picture" />
+              <span @click="getProfile(story.user.id)">{{ story.user.name }}</span>
+              <span class="timestamp">{{
+                timeSinceCommentWasPosted(story.timestamp)
+              }}</span>
+            </div>
+            <div @click="stopProgress">
+              <img
+                v-if="resumeProgressBar"
+                src="./pause-symbol.png"
+                width="20"
+                alt="Pause Symbol"
+              />
+              <img
+                v-else-if="!resumeProgressBar"
+                src="./play-symbol.png"
+                width="20"
+                alt="Play Symbol"
+              />
+            </div>
+          </div>
         </div>
-        <!-- <img
+        <img
           v-if="this.currentStoryIndex - index < 3"
           :src="story.content"
           class="image"
-        /> -->
-        <div>{{ story }}</div>
+        />
+        <!-- <div>{{ story }}</div> -->
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// import ProgressBar from "./ProgressBar.vue";
 import VueProgressBar from "vue-progressbar";
+import PlaySVG from "./play-svg.svg";
 
 export default {
-  components: { VueProgressBar },
+  components: { VueProgressBar, PlaySVG },
   name: "StoriesComponent",
   props: {
     story: Object,
@@ -68,17 +89,20 @@ export default {
       resumeProgressBar: true,
       intervalIds: {},
       numSteps: 100,
-      stepSize: 0.0025,
+      stepSize: 0.0005,
       intervalTime: 50,
+      PlaySymbol: "./play-svg.svg",
     };
   },
   methods: {
     changeStory(index) {
-      clearInterval(this.intervalIds[this.currentStoryIndex]);
-      this.resumeProgressBar = true;
-      this.currentStoryIndex = index;
-      this.progress = 0;
-      this.startProgress(index);
+      if (index !== this.currentStoryIndex) {
+        clearInterval(this.intervalIds[this.currentStoryIndex]);
+        this.resumeProgressBar = true;
+        this.currentStoryIndex = index;
+        this.progress = 0;
+        this.startProgress(index);
+      }
     },
     getClass(index) {
       if (index === 0 && this.currentStoryIndex === 0) {
@@ -98,20 +122,6 @@ export default {
       }
     },
     startProgress(index) {
-      // if (Number.isInteger(this.progress)) {
-      //   this.console.log(
-      //     "INDEX",
-      //     index,
-      //     "currentIndex",
-      //     this.currentStoryIndex,
-      //     "PROGRES",
-      //     this.progress
-      //   );
-      // }
-      // const numSteps = 100; // Increase the number of steps
-      // const stepSize = 0.005; // Decrease the step size
-      // const intervalTime = 500; // Increase the interval time
-
       const intervalId = setInterval(() => {
         if (this.progress < this.numSteps && this.resumeProgressBar) {
           this.progress += this.stepSize;
@@ -131,14 +141,72 @@ export default {
       if (!this.resumeProgressBar) {
         this.savedProgress = this.progress;
       } else {
-        this.console.log("XYZZZZ", this.savedProgress);
         this.progress = this.savedProgress;
       }
+    },
+    returnToPreviousPage() {
+      this.$router.go(-1);
+    },
+    timeSinceCommentWasPosted(time) {
+      // Create a new date object from the timestamp in GMT
+      const gmtDate = new Date(time);
+
+      // Get the timezone offset for the PST timezone
+      const pstOffset = -8 * 60; // PST is 8 hours behind GMT
+
+      // Convert the timestamp from GMT to PST by subtracting the timezone offset
+      const pstTimestamp = gmtDate.getTime() + pstOffset * 60 * 1000;
+
+      const diffMs = new Date() - new Date(pstTimestamp);
+
+      // Calculate the difference in seconds, minutes, hours, days, and weeks
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+
+      if (diffSecs <= 1) {
+        return "Now";
+      } else if (diffSecs > 1 && diffSecs <= 59) {
+        return `${diffSecs}s`;
+      } else if (diffSecs > 59 && diffMins <= 59) {
+        return `${diffMins}m`;
+      } else if (diffMins > 59 && diffHours <= 23) {
+        return `${diffHours}h`;
+      } else if (diffHours > 23 && diffDays <= 6) {
+        return `${diffDays}d`;
+      } else if (diffDays > 6) {
+        return `${diffWeeks}w`;
+      }
+    },
+    getProfile(userID) {
+      //redirect user to /profile/:userID route
+      this.$store.dispatch("getFollowingList", userID);
+      this.$store.dispatch("getProfileData", userID).then(() => {
+        this.$nextTick(() => {
+          this.$router.push({ name: "profile", params: { userID } });
+        });
+      });
+      // axios.get(`http://localhost:7002/profile/${userID}`).then((res) => {
+      // this.$nextTick(() => {
+      //   this.$router.push({ name: "profile", params: { userID: 1 } });
+      // });
     },
   },
   computed: {
     console: () => console,
     window: () => window,
+    allStoriesLooped() {
+      return this.currentStoryIndex === this.$store.state.stories.length;
+    },
+  },
+  watch: {
+    allStoriesLooped(newValue) {
+      if (newValue) {
+        this.returnToPreviousPage();
+      }
+    },
   },
 };
 </script>
@@ -164,8 +232,32 @@ export default {
   transition: all 0.5s ease;
 }
 
+.profile_picture {
+  width: 25px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
 .image {
-  width: 300px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.top-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.timestamp {
+  margin-left: 5px;
+}
+
+.profile-name {
   display: flex;
   align-items: center;
 }
@@ -173,7 +265,7 @@ export default {
 .first-feature-story {
   /* margin-left: 550px; */
   margin-left: 36em;
-  height: 500px;
+  height: 30em;
   width: 19em;
   background-color: black;
   border-radius: 5%;
@@ -188,7 +280,7 @@ export default {
 .first-secondary-story {
   /* margin-left: 300px; */
   margin-left: 17em;
-  height: 400px;
+  height: 26em;
   width: 16em;
   background-color: black;
   border-radius: 5%;
@@ -198,8 +290,8 @@ export default {
 }
 
 .second-feature-story {
-  height: 500px;
-  width: 16em;
+  height: 30em;
+  width: 19em;
   background-color: black;
   border-radius: 5%;
   margin-right: 3em;
@@ -209,7 +301,7 @@ export default {
 }
 
 .feature-story {
-  height: 500px;
+  height: 30em;
   width: 19em;
   background-color: black;
   border-radius: 5%;
@@ -220,7 +312,7 @@ export default {
 }
 
 .secondary-story {
-  height: 400px;
+  height: 26em;
   width: 16em;
   background-color: black;
   border-radius: 5%;
@@ -230,11 +322,11 @@ export default {
 }
 
 .before-feature-story {
-  height: 400px;
+  height: 26em;
   width: 16em;
   background-color: black;
   border-radius: 5%;
-  margin-right: 3em;
+  margin-right: 5em;
   color: white;
   transition: all 0.5s ease;
 }
@@ -257,28 +349,28 @@ export default {
 @media (max-width: 1000px) {
   .first-feature-story {
     margin-left: 2em;
-    height: 300px;
+    height: 25em;
     width: 15em;
   }
   .first-secondary-story {
     margin-left: 2em;
-    height: 300px;
+    height: 20em;
     width: 13em;
   }
   .second-feature-story {
-    height: 300px;
+    height: 25em;
     width: 15em;
   }
   .feature-story {
-    height: 300px;
+    height: 25em;
     width: 15em;
   }
   .secondary-story {
-    height: 250px;
+    height: 20em;
     width: 13em;
   }
   .before-feature-story {
-    height: 250px;
+    height: 20em;
     width: 13em;
   }
 }
