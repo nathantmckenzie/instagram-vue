@@ -1,14 +1,12 @@
 <template>
-  <div
-    class="w-full h-full border-2 border-black mt-20 mb-20 flex flex-col items-between relative"
-  >
+  <div class="container">
     <div class="flex justify-between m-1">
       <div class="flex flex-row">
         <img :src="post.user.profile_picture" class="rounded-full w-10 h-10 mr-3" />
         <div class="flex items-start flex-col">
           <div>
-            <span>
-              <b>{{ post.user.name }}</b></span
+            <span @click="getProfile(post.user.username)">
+              <b>{{ post.user.username }}</b></span
             >
             <span class="ml-1">{{ timeSinceCommentWasPosted(post.timestamp) }}</span>
           </div>
@@ -18,7 +16,7 @@
       <ellipsis-button />
     </div>
     <div v-if="post.id !== 1 && post.id !== 8">
-      <svg
+      <!-- <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -33,9 +31,9 @@
           stroke-linejoin="round"
           d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
-      </svg>
-      <img :src="images[currentImage]" class="mt-10 w-[600px] h-96 object-cover" />
-      <svg
+      </svg> -->
+      <img :src="post.content" class="mt-10 w-[600px] h-96 object-cover" />
+      <!-- <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -50,7 +48,7 @@
           stroke-linejoin="round"
           d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
-      </svg>
+      </svg> -->
     </div>
     <div v-if="post.id === 1 || post.id === 8">
       <div ref="videoContainer" class="video-container">
@@ -77,8 +75,8 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-row absolute z-20 left-2/4 bottom-1/3">
-      <div :key="index" v-for="(photo, index) in images.length">
+    <!-- <div class="flex flex-row absolute z-20 left-2/4 bottom-1/3">
+      <div :key="index" v-for="(photo, index) in .length">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           :fill="currentImage === index ? 'black' : 'grey'"
@@ -94,41 +92,49 @@
           />
         </svg>
       </div>
-    </div>
+    </div> -->
     <div class="flex justify-between m-2">
       <div class="flex flex-row">
         <like-button :isLiked="this.isLiked" @click="clickLikeButton" width="w-7" />
-        <comment-button />
-        <button class="icons">Send</button>
+        <comment-button width="small" />
+        <!-- <button class="icons">Send</button> -->
       </div>
-      <button>Save</button>
+      <!-- <button>Save</button> -->
     </div>
     <div class="ml-1" v-if="post.likes?.length > 1">
       Liked by
-      {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
+      <b
+        @click="
+          getProfile(
+            isLiked ? this.$store.state.user.username : post.likes[0]?.user.username
+          )
+        "
+        >{{ isLiked ? this.$store.state.user.username : post.likes[0]?.user.username }}</b
+      >
       and <span @click="clickOtherLikesButton"><b>others</b></span>
     </div>
-    <div class="ml-1" v-else-if="post.likes?.length === 1">
-      Liked by {{ isLiked ? "Nathan McKenzie" : post.likes[0]?.user.name }}
+    <div class="view-comments" v-else-if="post.likes?.length === 1">
+      Liked by
+      <b @click="getProfile(post.likes[0]?.user.username)">{{
+        post.likes[0]?.user.username
+      }}</b>
     </div>
     <div class="m-1">
-      <b>{{ post.user.name }}</b> {{ post.caption }}
+      <b>{{ post.user.username }}</b> {{ post.caption }}
     </div>
-    <div v-if="post.comments?.length > 0">
+    <div v-if="post.comments?.length > 0 && post.comments?.length < 3">
       <div :key="comment.id" class="m-1" v-for="comment in post.comments">
         <div class="flex justify-between">
           <div>
-            <b>{{ comment.user.name }}</b
+            <b @click="getProfile(comment.user.username)">{{ comment.user.username }}</b
             ><span class="ml-1" @dblclick="removeCommentFromPost">{{
               comment?.content
             }}</span>
           </div>
-          <like-button width="w-4" class="mr-2" />
+          <!-- <like-button width="small" class="mr-2" /> -->
         </div>
         <div class="flex flex-row align-middle">
-          <span class="mr-2">{{
-            timeSinceCommentWasPosted(comment.timestamp, comment.content)
-          }}</span>
+          <span class="mr-2">{{ timeSinceCommentWasPosted(comment.timestamp) }}</span>
           <button class="mr-2">Reply</button>
           <div class="hide-ellipsis">
             <ellipsis-button />
@@ -136,7 +142,11 @@
         </div>
       </div>
     </div>
+    <div v-else-if="post.comments?.length >= 3" class="view-comments">
+      View all {{ post.comments.length }} comments
+    </div>
     <text-field
+      class="text-field"
       :addCommentToPost="addCommentToPost"
       :value="textFieldInput"
       @update:value="textFieldInput = $event"
@@ -145,7 +155,6 @@
 </template>
 
 <script>
-import Modal from "./Modal.vue";
 import LikeButton from "./LikeButton.vue";
 import CommentButton from "./CommentButton.vue";
 import EllipsisButton from "./EllipsisButton.vue";
@@ -158,9 +167,9 @@ export default {
   props: {
     post: Object,
     showModal: Boolean,
+    getProfile: Function,
   },
   components: {
-    Modal,
     LikeButton,
     CommentButton,
     EllipsisButton,
@@ -198,18 +207,25 @@ export default {
   methods: {
     verifyUserLikedPost() {
       this.$store.dispatch("getData");
-      if (this.post.likes?.some((object) => object.user.id === 1)) {
+      if (
+        this.post.likes?.some((object) => object.user.id === this.$store.state.user.id)
+      ) {
         return true;
       } else {
         return false;
       }
     },
     clickLikeButton() {
-      const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);
+      const userLikedPost = this.post.likes?.some(
+        (object) => object.user.id === this.$store.state.user.id
+      );
       if (!userLikedPost) {
         this.isLiked = true;
         axios
-          .post("http://localhost:7002/likePost", { target_id: this.post.id, user_id: 1 })
+          .post("http://localhost:7002/likePost", {
+            target_id: this.post.id,
+            user_id: this.$store.state.user.id,
+          })
           .then((res) => {
             this.$store.dispatch("getData");
           });
@@ -218,20 +234,15 @@ export default {
         axios
           .post("http://localhost:7002/removeLikePost", {
             target_id: this.post.id,
-            user_id: 1,
+            user_id: this.$store.state.user.id,
           })
           .then((res) => {
             this.$store.dispatch("getData");
           });
       }
     },
-    // clickLikeCommentButton() {
-    //   const userLikedPost = this.post.likes?.some((object) => object.user.id === 1);
-
-    // },
     clickOtherLikesButton() {
       this.likes = this.post.likes;
-      console.log("OTHER LIKES", this.likes);
       this.$emit("likes-updated", this.likes);
       this.$emit("update-modal-status");
     },
@@ -250,7 +261,7 @@ export default {
       axios
         .post("http://localhost:7002/addCommentPost", {
           content: this.textFieldInput,
-          user_id: 1,
+          user_id: this.$store.state.user.id,
           post_id: this.post.id,
         })
         .then(() => {
@@ -261,7 +272,7 @@ export default {
     removeCommentFromPost() {
       axios
         .post("http://localhost:7002/removeCommentPost", {
-          user_id: 1,
+          user_id: this.$store.state.user.id,
           post_id: this.post.id,
         })
         .then((res) => {
@@ -273,7 +284,7 @@ export default {
       const gmtDate = new Date(time);
 
       // Get the timezone offset for the PST timezone
-      const pstOffset = -8 * 60; // PST is 8 hours behind GMT
+      const pstOffset = -7 * 60; // PST is 8 hours behind GMT
 
       // Convert the timestamp from GMT to PST by subtracting the timezone offset
       const pstTimestamp = gmtDate.getTime() + pstOffset * 60 * 1000;
@@ -308,7 +319,6 @@ export default {
       this.showEllipsis = false;
     },
     handleIntersection(entries) {
-      console.log("VIDEO INTERSECTED");
       if (entries[0].intersectionRatio >= this.intersectionRatio) {
         this.videoPlayer.play();
       } else {
@@ -347,7 +357,9 @@ export default {
     };
   },
   beforeUnmount() {
-    this.observer.unobserve(this.$refs.videoContainer);
+    if (this.observer && this.$refs.videoContainer) {
+      this.observer.unobserve(this.$refs.videoContainer);
+    }
   },
   computed: {
     console: () => console,
@@ -378,7 +390,7 @@ export default {
 }
 .container {
   width: 600px;
-  height: 700px;
+  height: 800px;
   border: solid #000;
   border-width: 3px 3px;
   margin-top: 20px;
@@ -423,5 +435,14 @@ export default {
   width: 50px;
   height: 50px;
   fill: #fff;
+}
+
+.text-field {
+  margin-top: 15px;
+  margin-left: 5px;
+}
+
+.view-comments {
+  margin-left: 5px;
 }
 </style>
