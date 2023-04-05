@@ -3,9 +3,9 @@
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
-    stroke-width="1.5"
-    stroke="currentColor"
-    class="w-6 h-6"
+    strokeWidth="{0.3}"
+    :stroke="this.$store.state.darkMode ? 'white' : 'black'"
+    :class="width === 'large' ? 'large-comment' : 'small-comment'"
   >
     <path
       stroke-linecap="round"
@@ -18,5 +18,18 @@
 <script>
 export default {
   name: "CommentButton",
+  props: {
+    width: Number,
+  },
 };
 </script>
+
+<style scoped>
+.large-comment {
+  width: 30px;
+}
+
+.small-comment {
+  width: 25px;
+}
+</style>
