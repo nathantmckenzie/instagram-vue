@@ -27,7 +27,17 @@
           }}
         </div>
         <button @click="unfollow(follower.id, 1)" class="follow-button">
-          {{ followListIDs.includes(follower.id) ? "Following" : "Follow" }}
+          {{
+            title === "Followers"
+              ? followingListIDs.includes(follower.id)
+                ? "Following"
+                : "Follow"
+              : title === "Following"
+              ? followingListIDs.includes(follower.id)
+                ? "Following"
+                : "Follow"
+              : null
+          }}
         </button>
       </li>
     </ul>
@@ -39,33 +49,30 @@ export default {
   name: "FollowModalComponent",
   data() {
     return {
-      showModal: false,
-      followListIDs: [],
+      followingListIDs: [],
+      followersListIDs: [],
     };
   },
   props: {
-    innerRef: String,
-    showFollowersModal: Boolean,
-    showFollowingModal: Boolean,
     list: Array,
     title: String,
   },
   methods: {
-    updateModalStatus() {
-      this.console.log("MODAL", this.$refs);
-      this.$refs.modalContainer.showModal();
-    },
     closeModal() {
       this.$refs.modalContainer.close();
     },
   },
   computed: {
     console: () => console,
-    modalUpdate: function () {
-      return this.showFollowersModal || this.showFollowingModal
-        ? this.updateModalStatus()
-        : null;
-    },
+  },
+  mounted() {
+    this.followersListIDs = this.$store.state.followList.following.map(
+      (item) => item.follower_id
+    );
+
+    this.followingListIDs = this.$store.state.followList.following.map(
+      (item) => item.target_id
+    );
   },
 };
 </script>
