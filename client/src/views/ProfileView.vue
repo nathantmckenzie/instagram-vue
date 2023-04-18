@@ -1,262 +1,295 @@
 <template>
   <div class="container" v-if="isDataReady">
-    <div class="top-section">
-      <img
-        @click="goToProfileStories"
-        v-lazy="user.profile_picture"
-        :class="userHasStories ? 'profile-picture with-background' : 'profile-picture'"
-      />
-      <div>
-        <div class="row">
-          <div class="username">{{ user.username }}</div>
-          <button>Edit profile</button>
-          <button>Settings</button>
-        </div>
-        <div class="row">
-          <div class="margin-right">{{ userPosts.length }} posts</div>
-          <div @click="updateFollowersModalStatus" class="margin-right">
-            {{ followers }} followers
-          </div>
-          <div @click="updateFollowingModalStatus" class="margin-right">
-            {{ following }} following
-          </div>
-        </div>
-        <FollowModal
-          :list="this.$store.state.followList.followers"
-          title="Followers"
-          @close-modal="closeModal"
-          ref="followersModal"
-          :getProfileFunction="getProfile"
-          :follow="follow"
-          :unfollow="unfollow"
-          :followingListIDs="followingListIDs"
+    <div class="nav-bar"><NavBar /></div>
+    <div class="profile-section">
+      <div class="top-section">
+        <img
+          @click="goToProfileStories"
+          v-lazy="targetUser.profile_picture"
+          :class="userHasStories ? 'profile-picture with-background' : 'profile-picture'"
         />
-        <FollowModal
-          :showFollowingModal="this.showFollowingModal"
-          :list="this.$store.state.followList.following"
-          title="Following"
-          ref="followingModal"
-          :getProfileFunction="getProfile"
-          :follow="follow"
-          :unfollow="unfollow"
-          :followingListIDs="followingListIDs"
-        />
-        <div class="row">
-          <div class="name">{{ user.name }}</div>
+        <div>
+          <div class="row">
+            <div class="username">{{ targetUser.username }}</div>
+            <div v-if="targetUser.id === currentUser.id">
+              <button>Edit profile</button>
+              <button>Settings</button>
+            </div>
+            {{ console.log("IS FOLLOWINGGG", this.isFollowing) }}
+            <!-- <div v-else>
+              <button v-if="this.">Following</button>
+            </div> -->
+          </div>
+          <div class="row">
+            <div class="margin-right">{{ userPosts.length }} posts</div>
+            <div @click="updateFollowersModalStatus" class="margin-right">
+              {{ followers }} followers
+            </div>
+            <div @click="updateFollowingModalStatus" class="margin-right">
+              {{ following }} following
+            </div>
+          </div>
+          {{ console.log("255", this.$store.state.followList) }}
+          <FollowModal
+            :list="this.$store.state.followList.followers"
+            title="Followers"
+            @close-modal="closeModal"
+            ref="followersModal"
+            :getProfileFunction="getProfile"
+            :follow="follow"
+            :unfollow="unfollow"
+            :followingListIDs="followingListIDs"
+          />
+          <FollowModal
+            :showFollowingModal="this.showFollowingModal"
+            :list="this.$store.state.followList.following"
+            title="Following"
+            ref="followingModal"
+            :getProfileFunction="getProfile"
+            :follow="follow"
+            :unfollow="unfollow"
+            :followingListIDs="followingListIDs"
+          />
+          <div class="row">
+            <div class="name">{{ targetUser.name }}</div>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- <div class="main-section">
+      <!-- <div class="main-section">
       <div class="buttons-row">
         <button>POSTS</button>
         <button>REELS</button>
         <button>TAGS</button>
       </div> -->
-    <div class="images">
-      <div v-for="(post, index) of this.$store.state.userPosts" :key="post.id">
-        <div v-if="post.content_type === 1" @click="this.displayPostModal(post, index)">
-          <img :src="post.content" class="image" />
-          <div class="white-backdrop"></div>
-          <div class="hover-image">
-            &#x2665;&#xFE0F;{{ post.likes ? post.likes.length : 0 }} &#x1F4AC;{{
-              post.comments ? post.comments.length : 0
-            }}
-          </div>
-        </div>
-        <div v-else-if="post.content_type === 2">
-          <video
-            @click="this.displayPostModal(post, index)"
-            width="320"
-            height="240"
-            muted
-          >
-            <source :src="post.content" type="video/mp4" />
-            <source :src="post.content" type="video/ogg" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <!-- <div class="hover-image">
+      <div v-if="!this.targetUser.private_account">
+        <div class="images">
+          <div v-for="(post, index) of this.$store.state.userPosts" :key="post.id">
+            <div
+              v-if="post.content_type === 1"
+              @click="this.displayPostModal(post, index)"
+            >
+              <img :src="post.content" class="image" />
+              <div class="white-backdrop"></div>
+              <div class="hover-image">
+                &#x2665;&#xFE0F;{{ post.likes ? post.likes.length : 0 }} &#x1F4AC;{{
+                  post.comments ? post.comments.length : 0
+                }}
+              </div>
+            </div>
+            <div v-else-if="post.content_type === 2">
+              <video @click="this.displayPostModal(post, index)" class="video" muted>
+                <source :src="post.content" type="video/mp4" />
+                <source :src="post.content" type="video/ogg" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <!-- <div class="hover-image">
           &#x2665;&#xFE0F;{{ post.likes ? post.likes.length : 0 }} &#x1F4AC;{{
             post.comments ? post.comments.length : 0
           }}
         </div> -->
+          </div>
+        </div>
+        <dialog class="modal-post" ref="postModal">
+          <dialog class="modal-likes" ref="likesModal">
+            <div @click="closeLikesModal">x</div>
+            <div class="inner-modal">
+              <h1>Likes</h1>
+              <ul>
+                <li
+                  v-for="like in this.displayedPost.likes"
+                  :key="like.id"
+                  class="like-row"
+                >
+                  <div
+                    class="profile-picture-username"
+                    @click="getProfile(like.user.username)"
+                  >
+                    <img
+                      :src="like.user.profile_picture"
+                      class="follower-profile-picture"
+                    />
+                    {{ like.user.username }}
+                  </div>
+                  <button
+                    v-if="like.user.id !== this.$store.state.currentUser.id"
+                    @click="
+                      followingListIDs.includes(like.user.id)
+                        ? unfollow(like.user.id, this.$store.state.currentUser.username)
+                        : follow(like.user.id, this.$store.state.currentUser.username)
+                    "
+                  >
+                    {{ followingListIDs.includes(like.user.id) ? "Following" : "Follow" }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </dialog>
+          <div
+            v-if="postModalDisplayed"
+            :class="
+              this.displayLeftArrow() ? 'dialog-arrows' : 'dialog-arrows-first-post'
+            "
+          >
+            <img
+              v-if="this.displayLeftArrow()"
+              class="previous-post"
+              @click="displayPreviousPost"
+              :src="LeftArrow"
+            />
+            <img
+              v-if="this.displayRightArrow()"
+              class="next-post"
+              @click="displayNextPost"
+              :src="RightArrow"
+            />
+          </div>
+          <div class="modal-post-container">
+            <div @click="closePostModal">x</div>
+            <img
+              v-if="this.displayedPost.content_type === 1"
+              :src="this.displayedPost.content"
+              class="modal-image"
+            />
+            <div
+              class="video-container"
+              v-else-if="this.displayedPost.content_type === 2"
+            >
+              <video
+                ref="videoPlayer"
+                width="320"
+                height="600"
+                autoplay
+                :muted="muted"
+                @play="onPlay"
+                @pause="onPause"
+              >
+                <source :src="this.displayedPost.content" type="video/mp4" />
+                <source :src="this.displayedPost.content" type="video/ogg" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <div
+              class="play-overlay"
+              v-if="!isVideoPlaying && this.displayedPost.content_type === 2"
+              @click="onOverlayClick"
+            >
+              <svg
+                class="play-button"
+                viewBox="0 0 32 32"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M26.109 14.016l-18.328-10.593c-1.172-.703-2.672-.141-2.672 1.328v21.094c0 1.469 1.5 2.031 2.672 1.328l18.328-10.594c1.078-.625 1.078-2.187 0-2.813z"
+                  fill="#fff"
+                />
+              </svg>
+            </div>
+            <div v-if="this.displayedPost.content_type === 2" class="sound-button">
+              <!-- <button v-if="muted" @click="changeMuteState">unmute</button> -->
+              <!-- <MuteImage v-if="muted" /> -->
+              <img v-if="muted" :src="MutedImage" width="50" @click="changeMuteState" />
+              <img
+                v-else-if="!muted"
+                :src="UnmutedImage"
+                width="50"
+                @click="changeMuteState"
+              />
+            </div>
+            <div class="right-side-modal">
+              <div>
+                <div class="top-row-modal">
+                  <img
+                    :src="this.displayedPost?.user?.profile_picture"
+                    class="modal-profile-picture"
+                  />
+                  {{ console.log("this.displayedPost", this.displayedPost) }}
+                  <div class="modal-user-name">
+                    <b>{{ this.displayedPost?.user?.username }}</b>
+                  </div>
+                </div>
+                <div v-if="this.displayedPost.caption">
+                  <div class="caption-section">
+                    <img
+                      :src="this.displayedPost?.user?.profile_picture"
+                      class="modal-profile-picture"
+                    />
+                    <div class="caption-columns">
+                      <div class="caption-row">
+                        <div>
+                          <b>{{ this.displayedPost?.user?.username }}</b>
+                        </div>
+                        <div class="caption">{{ this.displayedPost.caption }}</div>
+                      </div>
+                      <div>
+                        {{ timeSinceCommentWasPosted(this.displayedPost.timestamp) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comments-modal">
+                  <div
+                    v-for="comment in this.displayedPost?.comments"
+                    :key="comment.id"
+                    class="comment-modal"
+                  >
+                    <img
+                      :src="comment.user.profile_picture"
+                      class="modal-profile-picture"
+                    />
+                    <div class="modal-comment-content">
+                      <div>
+                        <span @click="getProfile(comment.user.username)"
+                          ><b>{{ comment.user.username }}</b></span
+                        >
+                        <span class="comment">{{ comment.content }}</span>
+                      </div>
+                      <div>
+                        <span>{{ timeSinceCommentWasPosted(comment.timestamp) }}</span>
+                        <span class="reply-button">Reply</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="bottom-section-modal">
+                <div class="like-comment-share-row">
+                  <like-button
+                    :isLiked="this.isLiked"
+                    @click="clickLikeButton"
+                    width="large"
+                  />
+                  <comment-button width="large" />
+                  <button class="icons">Send</button>
+                </div>
+                <div v-if="this.displayedPost?.likes">
+                  <img
+                    :src="this.displayedPost?.likes[0].user.profile_picture"
+                    class="modal-profile-picture"
+                  />
+                  Liked by
+                  <span @click="getProfile(this.displayedPost.likes[0].user.username)"
+                    ><b>{{ this.displayedPost.likes[0].user.username }}</b></span
+                  >
+                  <span v-if="this.displayedPost.likes.length > 1">
+                    and <b @click="displayLikesModal">others</b></span
+                  >
+                </div>
+                <text-field
+                  class="text-field"
+                  :value="textFieldInput"
+                  @update:value="textFieldInput = $event"
+                  :addCommentToPost="addCommentToPost"
+                />
+              </div>
+            </div>
+          </div>
+        </dialog>
+      </div>
+      <div class="private-account-message" v-else>
+        This account is private. Follow to see their photos and videos.
       </div>
     </div>
-    <dialog class="modal-post" ref="postModal">
-      <dialog class="modal-likes" ref="likesModal">
-        <div @click="closeLikesModal">x</div>
-        <div class="inner-modal">
-          <h1>Likes</h1>
-          <ul>
-            <li v-for="like in this.displayedPost.likes" :key="like.id" class="like-row">
-              <div
-                class="profile-picture-username"
-                @click="getProfile(like.user.username)"
-              >
-                <img :src="like.user.profile_picture" class="follower-profile-picture" />
-                {{ like.user.username }}
-              </div>
-              <button
-                v-if="like.user.id !== 1"
-                @click="
-                  followingListIDs.includes(like.user.id)
-                    ? unfollow(like.user.id, this.$store.state.user.username)
-                    : follow(like.user.id, this.$store.state.user.username)
-                "
-              >
-                {{ followingListIDs.includes(like.user.id) ? "Following" : "Follow" }}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </dialog>
-      <div
-        v-if="postModalDisplayed"
-        :class="this.displayLeftArrow() ? 'dialog-arrows' : 'dialog-arrows-first-post'"
-      >
-        <img
-          v-if="this.displayLeftArrow()"
-          class="previous-post"
-          @click="displayPreviousPost"
-          :src="LeftArrow"
-        />
-        <img
-          v-if="this.displayRightArrow()"
-          class="next-post"
-          @click="displayNextPost"
-          :src="RightArrow"
-        />
-      </div>
-      <div class="modal-post-container">
-        <div @click="closePostModal">x</div>
-        <img
-          v-if="this.displayedPost.content_type === 1"
-          :src="this.displayedPost.content"
-          class="modal-image"
-        />
-        <div class="video-container" v-else-if="this.displayedPost.content_type === 2">
-          <video
-            ref="videoPlayer"
-            width="320"
-            height="600"
-            autoplay
-            :muted="muted"
-            @play="onPlay"
-            @pause="onPause"
-          >
-            <source :src="this.displayedPost.content" type="video/mp4" />
-            <source :src="this.displayedPost.content" type="video/ogg" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <div
-          class="play-overlay"
-          v-if="!isVideoPlaying && this.displayedPost.content_type === 2"
-          @click="onOverlayClick"
-        >
-          <svg class="play-button" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M26.109 14.016l-18.328-10.593c-1.172-.703-2.672-.141-2.672 1.328v21.094c0 1.469 1.5 2.031 2.672 1.328l18.328-10.594c1.078-.625 1.078-2.187 0-2.813z"
-              fill="#fff"
-            />
-          </svg>
-        </div>
-        <div v-if="this.displayedPost.content_type === 2" class="sound-button">
-          <!-- <button v-if="muted" @click="changeMuteState">unmute</button> -->
-          <!-- <MuteImage v-if="muted" /> -->
-          <img v-if="muted" :src="MutedImage" width="50" @click="changeMuteState" />
-          <img
-            v-else-if="!muted"
-            :src="UnmutedImage"
-            width="50"
-            @click="changeMuteState"
-          />
-        </div>
-        <div class="right-side-modal">
-          <div>
-            <div class="top-row-modal">
-              <img
-                :src="this.displayedPost?.user?.profile_picture"
-                class="modal-profile-picture"
-              />
-              <div class="modal-user-name">
-                <b>{{ this.displayedPost?.user?.username }}</b>
-              </div>
-            </div>
-            <div v-if="this.displayedPost.caption">
-              <div class="caption-section">
-                <img
-                  :src="this.displayedPost?.user?.profile_picture"
-                  class="modal-profile-picture"
-                />
-                <div class="caption-columns">
-                  <div class="caption-row">
-                    <div>
-                      <b>{{ this.displayedPost?.user?.username }}</b>
-                    </div>
-                    <div class="caption">{{ this.displayedPost.caption }}</div>
-                  </div>
-                  <div>
-                    {{ timeSinceCommentWasPosted(this.displayedPost.timestamp) }}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="comments-modal">
-              <div
-                v-for="comment in this.displayedPost?.comments"
-                :key="comment.id"
-                class="comment-modal"
-              >
-                <img :src="comment.user.profile_picture" class="modal-profile-picture" />
-                <div class="modal-comment-content">
-                  <div>
-                    <span @click="getProfile(comment.user.username)"
-                      ><b>{{ comment.user.username }}</b></span
-                    >
-                    <span class="comment">{{ comment.content }}</span>
-                  </div>
-                  <div>
-                    <span>{{ timeSinceCommentWasPosted(comment.timestamp) }}</span>
-                    <span class="reply-button">Reply</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bottom-section-modal">
-            <div class="like-comment-share-row">
-              <like-button
-                :isLiked="this.isLiked"
-                @click="clickLikeButton"
-                width="large"
-              />
-              <comment-button width="large" />
-              <button class="icons">Send</button>
-            </div>
-            <div v-if="this.displayedPost?.likes">
-              <img
-                :src="this.displayedPost?.likes[0].user.profile_picture"
-                class="modal-profile-picture"
-              />
-              Liked by
-              <span @click="getProfile(this.displayedPost.likes[0].user.username)"
-                ><b>{{ this.displayedPost.likes[0].user.username }}</b></span
-              >
-              <span v-if="this.displayedPost.likes.length > 1">
-                and <b @click="displayLikesModal">others</b></span
-              >
-            </div>
-            <text-field
-              class="text-field"
-              :value="textFieldInput"
-              @update:value="textFieldInput = $event"
-              :addCommentToPost="addCommentToPost"
-            />
-          </div>
-        </div>
-      </div>
-    </dialog>
   </div>
 </template>
 
@@ -270,6 +303,7 @@ import MutedImage from "../assets/muted.png";
 import UnmutedImage from "../assets/unmuted.png";
 import LeftArrow from "../assets/left-arrow.png";
 import RightArrow from "../assets/right-arrow.png";
+import NavBar from "../components/NavBar.vue";
 
 import axios from "axios";
 
@@ -301,6 +335,7 @@ export default {
     EllipsisButton,
     TextField,
     FollowModal,
+    NavBar,
   },
   methods: {
     updateFollowersModalStatus() {
@@ -352,6 +387,7 @@ export default {
       this.$refs.likesModal.close();
     },
     follow(targetID, followerID) {
+      this.console.log("targetID", targetID, "followerID", followerID);
       axios
         .post("http://localhost:7002/follow", {
           target_id: targetID,
@@ -359,7 +395,7 @@ export default {
         })
         .then(() => {
           this.console.log("SRSLY");
-          this.$store.dispatch("getFollowingList", this.user.username).then(() => {
+          this.$store.dispatch("getFollowingList", this.targetUser.username).then(() => {
             this.console.log(
               "WHAT THE HAAAAL",
               this.$store.state.followList.following.map((item) => item.target_id)
@@ -371,6 +407,7 @@ export default {
         });
     },
     unfollow(targetID, followerID) {
+      console.log("target_id", targetID, "followerID", followerID);
       axios
         .post("http://localhost:7002/unfollow", {
           target_id: targetID,
@@ -378,7 +415,7 @@ export default {
         })
         .then(() => {
           this.console.log("SRSLY");
-          this.$store.dispatch("getFollowingList", this.user.username).then(() => {
+          this.$store.dispatch("getFollowingList", this.targetUser.username).then(() => {
             this.console.log(
               "WHAT THE HAAAAL",
               this.$store.state.followList.following.map((item) => item.target_id)
@@ -425,20 +462,22 @@ export default {
     clickLikeButton() {
       this.isLiked = !this.isLiked;
       const userLikedPost = this.displayedPost.likes?.some(
-        (object) => object.user.id === 1
+        (object) => object.user.id === this.$store.state.currentUser.id
       );
       if (!userLikedPost) {
         this.isLiked = true;
         axios
           .post("http://localhost:7002/likePost", {
             target_id: this.displayedPost.id,
-            user_id: 1,
+            user_id: this.$store.state.currentUser.id,
           })
           .then(() => {
-            this.$store.dispatch("getData");
+            this.console.log("LIKED BABY");
+            this.$store.dispatch("getProfileData", this.targetUser.username);
             axios
               .get(`http://localhost:7002/post/${this.displayedPost.id}`)
               .then((res) => {
+                this.console.log("WTFFF", res.data.post.rows[0]);
                 this.displayedPost = res.data.post.rows[0];
               });
           });
@@ -447,20 +486,32 @@ export default {
         axios
           .post("http://localhost:7002/removeLikePost", {
             target_id: this.displayedPost.id,
-            user_id: 1,
+            user_id: this.$store.state.currentUser.id,
           })
           .then(() => {
             this.$store.dispatch("getData");
             axios
               .get(`http://localhost:7002/post/${this.displayedPost.id}`)
               .then((res) => {
+                this.console.log("res.data.post.rows[0]", res.data.post.rows[0]);
                 this.displayedPost = res.data.post.rows[0];
               });
           });
       }
     },
     verifyUserLikedPost() {
-      if (this.displayedPost.likes?.some((object) => object.user.id === 1)) {
+      this.console.log("this.$store.state.currentUser", this.$store.state.currentUser);
+      this.console.log(
+        "466",
+        this.displayedPost.likes?.some(
+          (object) => object.user.id === this.$store.state.currentUser.id
+        )
+      );
+      if (
+        this.displayedPost.likes?.some(
+          (object) => object.user.id === this.$store.state.currentUser.id
+        )
+      ) {
         return true;
       } else {
         return false;
@@ -470,7 +521,7 @@ export default {
       if (this.$store.state.stories.length > 0) {
         this.$router.push({
           name: "profile-stories",
-          params: { userID: this.$store.state.user.id },
+          params: { userID: this.$store.state.targetUser.id },
         });
       }
     },
@@ -496,7 +547,7 @@ export default {
       axios
         .post("http://localhost:7002/addCommentPost", {
           content: this.textFieldInput,
-          user_id: this.$store.state.user.id,
+          user_id: this.$store.state.currentUser.id,
           post_id: this.displayedPost.id,
         })
         .then(() => {
@@ -536,11 +587,46 @@ export default {
     displayPreviousPost() {
       this.displayedPost = this.$store.state.userPosts[this.currentIndex - 1];
       this.currentIndex = this.currentIndex - 1;
-      this.displayPostModal(this.displayedPost, this.currentIndex - 1);
+      this.isLiked = this.verifyUserLikedPost();
+      if (this.displayedPost.content_type === 2) {
+        this.$nextTick(() => {
+          this.videoPlayer = this.$refs.videoPlayer;
+          this.videoPlayer.addEventListener("ended", () => {
+            this.videoPlayer.currentTime = 0;
+            this.videoPlayer.play();
+          });
+
+          this.videoPlayer.addEventListener("click", () => {
+            if (this.isVideoPlaying) {
+              this.videoPlayer.pause();
+            } else {
+              this.videoPlayer.play();
+            }
+          });
+        });
+      }
     },
     displayNextPost() {
       this.displayedPost = this.$store.state.userPosts[this.currentIndex + 1];
       this.currentIndex = this.currentIndex + 1;
+      this.isLiked = this.verifyUserLikedPost();
+      if (this.displayedPost.content_type === 2) {
+        this.$nextTick(() => {
+          this.videoPlayer = this.$refs.videoPlayer;
+          this.videoPlayer.addEventListener("ended", () => {
+            this.videoPlayer.currentTime = 0;
+            this.videoPlayer.play();
+          });
+
+          this.videoPlayer.addEventListener("click", () => {
+            if (this.isVideoPlaying) {
+              this.videoPlayer.pause();
+            } else {
+              this.videoPlayer.play();
+            }
+          });
+        });
+      }
     },
   },
   watch: {
@@ -553,12 +639,16 @@ export default {
     },
   },
   mounted() {
-    this.$store.dispatch("getProfileData", this.$route.params.username);
-    this.$store.dispatch("getFollowingList", this.$route.params.username).then(() => {
-      this.followingListIDs = this.$store.state.followList.following.map(
-        (item) => item.target_id
-      );
-    });
+    this.$store.dispatch("updateToken").then(() => {
+      this.$store.dispatch("getData").then(() => {
+        this.$store.dispatch("getProfileData", this.$route.params.username);
+        this.$store.dispatch("getFollowingList", this.$route.params.username).then(() => {
+          this.followingListIDs = this.$store.state.followList.following.map(
+            (item) => item.target_id
+          );
+        });
+      });
+    }); //1
     if (this.$store.state.stories.length > 0) {
       this.userHasStories = true;
     }
@@ -566,8 +656,11 @@ export default {
   computed: {
     console: () => console,
     window: () => window,
-    user: function () {
-      return this.$store.state.user;
+    currentUser: function () {
+      return this.$store.state.currentUser;
+    },
+    targetUser: function () {
+      return this.$store.state.targetUser;
     },
     userPosts: function () {
       return this.$store.state.userPosts;
@@ -593,6 +686,10 @@ export default {
         this.$store.state.followList.followers
       );
     },
+    isFollowing() {
+      this.console.log("line 690", this.$store.state.currentUser);
+      return this.$store.state.followList.following.includes(this.targetUser.id);
+    },
   },
 };
 </script>
@@ -600,8 +697,20 @@ export default {
 <style scoped>
 .container {
   display: flex;
-  justify-content: center;
-  flex-direction: column;
+  flex-direction: row;
+}
+
+.nav-bar {
+  width: 15%;
+  height: 100vh;
+  border-right: 1px solid;
+  position: relative;
+  margin-left: 20px;
+}
+
+.profile-section {
+  width: 80%;
+  margin-top: 30px;
 }
 
 ul {
@@ -613,6 +722,7 @@ ul {
   width: 150px;
   height: 150px;
   margin-bottom: 30px;
+  margin-right: 50px;
 }
 
 .follower-profile-picture {
@@ -669,14 +779,19 @@ button {
 
 .name {
   margin-top: 10px;
-  margin-left: 10px;
 }
 
 .image {
-  width: 200px;
-  height: 200px;
+  width: 300px;
+  height: 300px;
   position: relative;
   display: inline-block;
+}
+
+.video {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
 }
 
 .modal-image {
@@ -689,8 +804,8 @@ button {
 .hover-image {
   position: absolute;
   z-index: 1;
-  width: 200px;
-  height: 200px;
+  width: 300px;
+  height: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -924,8 +1039,29 @@ button {
   pointer-events: auto;
 }
 
-/* .test {
-  position: relative;
-  height: 100vh;
-} */
+.private-account-message {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+@media (max-width: 1100px) {
+  .modal-post {
+    width: 800px;
+  }
+
+  .nav-bar {
+    display: none;
+  }
+}
+
+@media (max-width: 1250px) {
+  .nav-bar {
+    display: none;
+  }
+
+  .profile-section {
+    width: 100vw;
+  }
+}
 </style>
