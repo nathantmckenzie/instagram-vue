@@ -2,7 +2,7 @@
   <div class="container">
     <div class="flex justify-between m-1">
       <div class="flex flex-row">
-        <img :src="post.user.profile_picture" class="rounded-full w-10 h-10 mr-3" />
+        <img :src="post.user.profile_picture" class="profile-picture" />
         <div class="flex items-start flex-col">
           <div>
             <span @click="getProfile(post.user.username)">
@@ -106,10 +106,14 @@
       <b
         @click="
           getProfile(
-            isLiked ? this.$store.state.user.username : post.likes[0]?.user.username
+            isLiked
+              ? this.$store.state.currentUser.username
+              : post.likes[0]?.user.username
           )
         "
-        >{{ isLiked ? this.$store.state.user.username : post.likes[0]?.user.username }}</b
+        >{{
+          isLiked ? this.$store.state.currentUser.username : post.likes[0]?.user.username
+        }}</b
       >
       and <span @click="clickOtherLikesButton"><b>others</b></span>
     </div>
@@ -120,7 +124,8 @@
       }}</b>
     </div>
     <div class="m-1">
-      <b>{{ post.user.username }}</b> {{ post.caption }}
+      <b @click="getProfile(post.user.username)">{{ post.user.username }}</b>
+      {{ post.caption }}
     </div>
     <div v-if="post.comments?.length > 0 && post.comments?.length < 3">
       <div :key="comment.id" class="m-1" v-for="comment in post.comments">
@@ -175,9 +180,6 @@ export default {
     EllipsisButton,
     TextField,
   },
-  created() {
-    const showModal = this.showModal;
-  },
   mounted() {
     this.isLiked = this.verifyUserLikedPost();
     this.videoPlayer = this.$refs.videoPlayer;
@@ -186,19 +188,15 @@ export default {
     });
     this.$nextTick(() => {
       this.observer.observe(this.$refs.videoContainer);
-      this.videoPlayer.addEventListener("ended", () => {
+      this.$refs.videoPlayer.addEventListener("ended", () => {
         this.videoPlayer.currentTime = 0; // Reset the video playback to the beginning
         this.videoPlayer.play(); // Restart the video playback
       });
 
-      // Add a click event listener to the video element
       this.videoPlayer.addEventListener("click", () => {
-        // Check if the video is currently paused
         if (this.videoPlayer.paused) {
-          // If the video is paused, play it
           this.videoPlayer.play();
         } else {
-          // If the video is playing, pause it
           this.videoPlayer.pause();
         }
       });
@@ -208,7 +206,9 @@ export default {
     verifyUserLikedPost() {
       this.$store.dispatch("getData");
       if (
-        this.post.likes?.some((object) => object.user.id === this.$store.state.user.id)
+        this.post.likes?.some(
+          (object) => object.user.id === this.$store.state.currentUser.id
+        )
       ) {
         return true;
       } else {
@@ -217,14 +217,14 @@ export default {
     },
     clickLikeButton() {
       const userLikedPost = this.post.likes?.some(
-        (object) => object.user.id === this.$store.state.user.id
+        (object) => object.user.id === this.$store.state.currentUser.id
       );
       if (!userLikedPost) {
         this.isLiked = true;
         axios
           .post("http://localhost:7002/likePost", {
             target_id: this.post.id,
-            user_id: this.$store.state.user.id,
+            user_id: this.$store.state.currentUser.id,
           })
           .then((res) => {
             this.$store.dispatch("getData");
@@ -234,7 +234,7 @@ export default {
         axios
           .post("http://localhost:7002/removeLikePost", {
             target_id: this.post.id,
-            user_id: this.$store.state.user.id,
+            user_id: this.$store.state.currentUser.id,
           })
           .then((res) => {
             this.$store.dispatch("getData");
@@ -261,7 +261,7 @@ export default {
       axios
         .post("http://localhost:7002/addCommentPost", {
           content: this.textFieldInput,
-          user_id: this.$store.state.user.id,
+          user_id: this.$store.state.currentUser.id,
           post_id: this.post.id,
         })
         .then(() => {
@@ -272,7 +272,7 @@ export default {
     removeCommentFromPost() {
       axios
         .post("http://localhost:7002/removeCommentPost", {
-          user_id: this.$store.state.user.id,
+          user_id: this.$store.state.currentUser.id,
           post_id: this.post.id,
         })
         .then((res) => {
@@ -332,7 +332,6 @@ export default {
       this.isVideoPlaying = false;
     },
     onOverlayClick() {
-      // When the overlay is clicked, hide the overlay and play the video
       this.isVideoPlaying = true;
       this.$refs.videoPlayer.play();
     },
@@ -393,11 +392,18 @@ export default {
   height: 800px;
   border: solid #000;
   border-width: 3px 3px;
-  margin-top: 20px;
+  /* margin-top: 20px; */
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   align-items: space-between;
+}
+
+.profile-picture {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 10px;
 }
 .post-image {
   margin-top: 30px;

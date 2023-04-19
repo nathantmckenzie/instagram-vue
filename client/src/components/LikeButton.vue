@@ -4,8 +4,8 @@
     :fill="isLiked ? 'red' : 'none'"
     viewBox="0 0 24 24"
     strokeWidth="{0.3}"
-    stroke="black"
-    :class="width"
+    :stroke="this.$store.state.darkMode ? 'white' : 'black'"
+    :class="width === 'large' ? 'large-heart' : 'small-heart'"
   >
     <path
       strokeLinecap="round"
@@ -28,3 +28,13 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.large-heart {
+  width: 30px;
+}
+
+.small-heart {
+  width: 25px;
+}
+</style>

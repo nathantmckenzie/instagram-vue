@@ -1,5 +1,6 @@
 <template>
   <div class="container" v-if="isDataReady">
+    {{ console.log("LINE 3", this.$store.state.currentUserFollowerMap) }}
     <div class="nav-bar"><NavBar /></div>
     <div class="profile-section">
       <div class="top-section">
@@ -15,10 +16,19 @@
               <button>Edit profile</button>
               <button>Settings</button>
             </div>
-            {{ console.log("IS FOLLOWINGGG", this.isFollowing) }}
-            <!-- <div v-else>
-              <button v-if="this.">Following</button>
-            </div> -->
+            <button
+              v-else-if="this.isFollowing"
+              @click="unfollow(targetUser.id, currentUser.id)"
+            >
+              Following
+            </button>
+            <button
+              v-else-if="!this.isFollowing"
+              @click="follow(targetUser.id, currentUser.id)"
+            >
+              Follow
+            </button>
+            <!-- <button v-else-if="!this.isFollowing">Follow</button> -->
           </div>
           <div class="row">
             <div class="margin-right">{{ userPosts.length }} posts</div>
@@ -29,9 +39,8 @@
               {{ following }} following
             </div>
           </div>
-          {{ console.log("255", this.$store.state.followList) }}
           <FollowModal
-            :list="this.$store.state.followList.followers"
+            :list="this.$store.state.targetUserFollowerMap.followers"
             title="Followers"
             @close-modal="closeModal"
             ref="followersModal"
@@ -42,7 +51,7 @@
           />
           <FollowModal
             :showFollowingModal="this.showFollowingModal"
-            :list="this.$store.state.followList.following"
+            :list="this.$store.state.targetUserFollowerMap.following"
             title="Following"
             ref="followingModal"
             :getProfileFunction="getProfile"
@@ -61,7 +70,13 @@
         <button>REELS</button>
         <button>TAGS</button>
       </div> -->
-      <div v-if="!this.targetUser.private_account">
+      <div
+        v-if="this.targetUser.private_account && !this.isFollowing"
+        class="private-account-message"
+      >
+        This account is private. Follow to see their photos and videos.
+      </div>
+      <div v-else>
         <div class="images">
           <div v-for="(post, index) of this.$store.state.userPosts" :key="post.id">
             <div
@@ -286,9 +301,6 @@
           </div>
         </dialog>
       </div>
-      <div class="private-account-message" v-else>
-        This account is private. Follow to see their photos and videos.
-      </div>
     </div>
   </div>
 </template>
@@ -377,7 +389,7 @@ export default {
       this.$refs.postModal.close();
       this.postModalDisplayed = false;
       this.muted = true;
-      this.$store.dispatch("getFollowingList");
+      this.$store.dispatch("getTargetUserFollowerMap");
       this.$store.dispatch("getProfileData");
     },
     displayLikesModal(post) {
@@ -395,15 +407,21 @@ export default {
         })
         .then(() => {
           this.console.log("SRSLY");
-          this.$store.dispatch("getFollowingList", this.targetUser.username).then(() => {
-            this.console.log(
-              "WHAT THE HAAAAL",
-              this.$store.state.followList.following.map((item) => item.target_id)
-            );
-            this.followingListIDs = this.$store.state.followList.following.map(
-              (item) => item.target_id
-            );
-          });
+          this.$store
+            .dispatch("getTargetUserFollowerMap", this.targetUser.username)
+            .then(() => {
+              this.console.log(
+                "WHAT THE HAAAAL",
+                this.$store.state.targetUserFollowerMap.following.map(
+                  (item) => item.target_id
+                )
+              );
+              this.$store.dispatch("getCurrentUserFollowerMap");
+              this.followingListIDs =
+                this.$store.state.targetUserFollowerMap.following.map(
+                  (item) => item.target_id
+                );
+            });
         });
     },
     unfollow(targetID, followerID) {
@@ -415,15 +433,21 @@ export default {
         })
         .then(() => {
           this.console.log("SRSLY");
-          this.$store.dispatch("getFollowingList", this.targetUser.username).then(() => {
-            this.console.log(
-              "WHAT THE HAAAAL",
-              this.$store.state.followList.following.map((item) => item.target_id)
-            );
-            this.followingListIDs = this.$store.state.followList.following.map(
-              (item) => item.target_id
-            );
-          });
+          this.$store
+            .dispatch("getTargetUserFollowerMap", this.targetUser.username)
+            .then(() => {
+              this.console.log(
+                "WHAT THE HAAAAL",
+                this.$store.state.targetUserFollowerMap.following.map(
+                  (item) => item.target_id
+                )
+              );
+              this.$store.dispatch("getCurrentUserFollowerMap");
+              this.followingListIDs =
+                this.$store.state.targetUserFollowerMap.following.map(
+                  (item) => item.target_id
+                );
+            });
         });
     },
     timeSinceCommentWasPosted(time) {
@@ -526,7 +550,6 @@ export default {
       }
     },
     getProfile(username) {
-      // this.$store.dispatch("getFollowingList", username);
       this.$refs.postModal.close();
       this.$refs.likesModal.close();
       this.postModalDisplayed = false;
@@ -632,7 +655,7 @@ export default {
   watch: {
     $route(to, from) {
       this.$store.dispatch("getProfileData", this.$route.params.username);
-      this.$store.dispatch("getFollowingList", this.$route.params.username);
+      this.$store.dispatch("getTargetUserFollowerMap", this.$route.params.username);
       if (this.$store.state.stories.length > 0) {
         this.userHasStories = true;
       }
@@ -642,11 +665,13 @@ export default {
     this.$store.dispatch("updateToken").then(() => {
       this.$store.dispatch("getData").then(() => {
         this.$store.dispatch("getProfileData", this.$route.params.username);
-        this.$store.dispatch("getFollowingList", this.$route.params.username).then(() => {
-          this.followingListIDs = this.$store.state.followList.following.map(
-            (item) => item.target_id
-          );
-        });
+        this.$store
+          .dispatch("getTargetUserFollowerMap", this.$route.params.username)
+          .then(() => {
+            this.followingListIDs = this.$store.state.targetUserFollowerMap.following.map(
+              (item) => item.target_id
+            );
+          });
       });
     }); //1
     if (this.$store.state.stories.length > 0) {
@@ -669,26 +694,33 @@ export default {
       return this.$store.state.profile;
     },
     followers: function () {
-      return this.$store.state.followList.followers
-        ? this.$store.state.followList.followers.length
+      return this.$store.state.targetUserFollowerMap.followers
+        ? this.$store.state.targetUserFollowerMap.followers.length
         : 0;
     },
     following: function () {
-      return this.$store.state.followList.following
-        ? this.$store.state.followList.following.length
+      return this.$store.state.targetUserFollowerMap.following
+        ? this.$store.state.targetUserFollowerMap.following.length
         : 0;
     },
     isDataReady() {
       return (
         this.$store.state.stories &&
         this.$store.state.userPosts &&
-        this.$store.state.followList.following &&
-        this.$store.state.followList.followers
+        this.$store.state.targetUserFollowerMap.following &&
+        this.$store.state.targetUserFollowerMap.followers
       );
     },
     isFollowing() {
-      this.console.log("line 690", this.$store.state.currentUser);
-      return this.$store.state.followList.following.includes(this.targetUser.id);
+      this.console.log(
+        "line 690",
+        this.$store.state.currentUserFollowerMap?.following.some(
+          (obj) => obj.target_id === this.targetUser.id
+        )
+      );
+      return this.$store.state.currentUserFollowerMap?.following.some(
+        (obj) => obj.target_id === this.targetUser.id
+      );
     },
   },
 };
@@ -706,6 +738,7 @@ export default {
   border-right: 1px solid;
   position: relative;
   margin-left: 20px;
+  overflow-y: hidden;
 }
 
 .profile-section {
@@ -723,6 +756,7 @@ ul {
   height: 150px;
   margin-bottom: 30px;
   margin-right: 50px;
+  object-fit: cover;
 }
 
 .follower-profile-picture {
@@ -886,8 +920,11 @@ button {
 
 .comments-modal {
   max-height: 330px;
-  max-width: 600px;
+  width: 600px;
   overflow-y: scroll;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .comments-modal::-webkit-scrollbar {
@@ -1062,6 +1099,24 @@ button {
 
   .profile-section {
     width: 100vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .images {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .image {
+    width: 500px;
+    height: 500px;
+  }
+
+  .video {
+    width: 500px;
+    height: 500px;
   }
 }
 </style>

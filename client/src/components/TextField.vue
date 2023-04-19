@@ -1,11 +1,12 @@
 <template>
-  <form @submit.prevent="addCommentToPost" class="flex justify-between mx-5">
-    <input
+  <form @submit.prevent="addCommentToPost">
+    <textarea
       placeholder="Add a comment..."
       :value="value"
       @input="$emit('update:value', $event.target.value)"
+      @keyup.enter="addCommentToPost"
     />
-    <button>Post</button>
+    <button v-if="value.length > 0" class="post-button">Post</button>
   </form>
 </template>
 
@@ -23,4 +24,23 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+form {
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+textarea {
+  border: none;
+  outline: none;
+  width: 90%;
+  word-wrap: break-word;
+  resize: none;
+  font-family: "Helvetica Neue", sans-serif;
+}
+
+.post-button {
+  color: blue;
+}
+</style>

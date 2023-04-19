@@ -1,11 +1,14 @@
 <template>
-  <div class="container">
-    <HomeView />
+  <div :class="this.$store.state.darkMode ? 'dark-mode-container' : 'container'">
+    <router-view />
+    <!-- <label>
+      <input type="checkbox" @click="updateDarkMode" />
+      Dark Mode
+    </label> -->
   </div>
 </template>
 
 <script>
-import HomeView from "./views/HomeView.vue";
 import "./index.css";
 
 export default {
@@ -16,12 +19,10 @@ export default {
       posts: [],
     };
   },
-  components: {
-    HomeView,
-  },
-  methods: {},
-  created() {
-    this.$store.dispatch("getData");
+  methods: {
+    updateDarkMode() {
+      this.$store.dispatch("updateDarkMode");
+    },
   },
   computed: {
     console: () => console,
@@ -33,5 +34,10 @@ export default {
 <style scoped>
 .container {
   height: 100vh;
+}
+
+.dark-mode-container {
+  background-color: black;
+  color: white;
 }
 </style>

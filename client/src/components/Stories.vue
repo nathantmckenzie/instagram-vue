@@ -1,7 +1,5 @@
 <template>
   <div class="container">
-    <!-- {{ console.log(this.$store.state.stories) }} -->
-    <!-- <div v-for="(story, index) of stories" :key="index"> -->
     <div v-for="(story, index) of this.$store.state.stories" :key="index">
       <div
         @click.stop.prevent="changeStory(index)"
@@ -182,7 +180,7 @@ export default {
     },
     getProfile(userID) {
       //redirect user to /profile/:userID route
-      this.$store.dispatch("getFollowingList", userID);
+      this.$store.dispatch("getTargetUserFollowerMap", userID);
       this.$store.dispatch("getProfileData", userID).then(() => {
         this.$nextTick(() => {
           this.$router.push({ name: "profile", params: { userID } });

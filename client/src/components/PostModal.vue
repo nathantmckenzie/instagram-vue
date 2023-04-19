@@ -26,7 +26,10 @@
               : null
           }}
         </div>
-        <button @click="unfollow(follower.id, 1)" class="follow-button">
+        <button
+          @click="unfollow(follower.id, this.$store.state.currentUser.id)"
+          class="follow-button"
+        >
           {{
             title === "Followers"
               ? followingListIDs.includes(follower.id)
@@ -66,11 +69,11 @@ export default {
     console: () => console,
   },
   mounted() {
-    this.followersListIDs = this.$store.state.followList.following.map(
+    this.followersListIDs = this.$store.state.targetUserFollowerMap.following.map(
       (item) => item.follower_id
     );
 
-    this.followingListIDs = this.$store.state.followList.following.map(
+    this.followingListIDs = this.$store.state.targetUserFollowerMap.following.map(
       (item) => item.target_id
     );
   },

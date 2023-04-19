@@ -1,29 +1,33 @@
 <template>
-  <div class="homeContainer">
-    <div class="navBar"><NavBar /></div>
-    <div class="mainPage">
+  <div class="home-container">
+    <div class="nav-bar"><NavBar /></div>
+    <div class="main-page">
       <MainView
         v-bind:showModal="showModal"
         :updateModalStatus="updateModalStatus"
         @update-modal-status="this.updateModalStatus"
         v-on:likes-updated="handleLikesUpdated"
+        :getProfile="getProfile"
       />
       <dialog class="modal" ref="modalContainer">
         <div @click="closeModal">x</div>
-        <div class="innerModal">
+        <div class="inner-modal">
           <h1>Likes</h1>
           <ul>
-            <li v-for="like in likes" :key="like.id" class="likeRow">
-              <div>
-                <img :src="like.user.profile_picture" class="profilePicture" />
-                {{ like.user.name }}
+            <li v-for="like in likes" :key="like.id" class="like-row">
+              <div
+                class="profile-picture-username"
+                @click="getProfile(like.user.username)"
+              >
+                <img :src="like.user.profile_picture" class="profile-picture" />
+                {{ like.user.username }}
               </div>
               <button
                 v-if="like.user.id !== 1"
                 @click="
                   followListIDs.includes(like.user.id)
-                    ? unfollow(like.user.id, 1)
-                    : follow(like.user.id, 1)
+                    ? unfollow(like.user.id, this.$store.state.currentUser.id)
+                    : follow(like.user.id, this.$store.state.currentUser.id)
                 "
               >
                 {{ followListIDs.includes(like.user.id) ? "Following" : "Follow" }}
@@ -33,14 +37,13 @@
         </div>
       </dialog>
     </div>
-    <div class="stories">Stories</div>
+    <!-- <div class="stories">Stories</div> -->
   </div>
 </template>
 
 <script>
 import NavBar from "../components/NavBar.vue";
 import MainView from "./MainView.vue";
-import Modal from "../components/Modal.vue";
 import AboutView from "./AboutView.vue";
 
 import axios from "axios";
@@ -50,14 +53,12 @@ export default {
   components: {
     NavBar,
     MainView,
-    Modal,
     AboutView,
   },
   emits: {},
   data() {
     return {
       showModal: false,
-      hasEventListener: false,
       likes: [],
       followListIDs: [],
     };
@@ -65,6 +66,13 @@ export default {
   computed: {
     console: () => console,
     window: () => window,
+  },
+  mounted() {
+    this.$store.dispatch("updateToken").then(() => {
+      this.$store.dispatch("getData");
+      this.$store.dispatch("getCurrentUserFollowerMap");
+    });
+    // this.$store.dispatch("getStories");
   },
   methods: {
     updateModalStatus() {
@@ -75,8 +83,11 @@ export default {
     },
     async handleLikesUpdated(likes) {
       this.likes = likes;
-      await this.$store.dispatch("getFollowingList");
-      this.followListIDs = this.$store.state.followList.following.map(
+      await this.$store.dispatch(
+        "getTargetUserFollowerMap",
+        this.$store.state.currentUser.id
+      );
+      this.followListIDs = this.$store.state.targetUserFollowerMap.following.map(
         (item) => item.target_id
       );
     },
@@ -87,8 +98,8 @@ export default {
           follower_id: followerID,
         })
         .then(() => {
-          this.$store.dispatch("getFollowingList").then(() => {
-            this.followListIDs = this.$store.state.followList.following.map(
+          this.$store.dispatch("getTargetUserFollowerMap").then(() => {
+            this.followListIDs = this.$store.state.targetUserFollowerMap.following.map(
               (item) => item.target_id
             );
           });
@@ -101,19 +112,27 @@ export default {
           follower_id: followerID,
         })
         .then(() => {
-          this.$store.dispatch("getFollowingList").then(() => {
-            this.followListIDs = this.$store.state.followList.following.map(
+          this.$store.dispatch("getTargetUserFollowerMap").then(() => {
+            this.followListIDs = this.$store.state.targetUserFollowerMap.following.map(
               (item) => item.target_id
             );
           });
         });
+    },
+    getProfile(username) {
+      // this.$store.dispatch("getFollowingList", username);
+      this.$store.dispatch("getProfileData", username).then(() => {
+        this.$nextTick(() => {
+          this.$router.push({ name: "profile", params: { username } });
+        });
+      });
     },
   },
 };
 </script>
 
 <style scoped>
-.homeContainer {
+.home-container {
   display: flex;
   z-index: 0;
   height: 100%;
@@ -123,10 +142,11 @@ export default {
   display: none;
 }
 
-.navBar {
+.nav-bar {
+  margin-left: 20px;
   width: 20%;
   height: 100vh;
-  border-style: solid;
+  border-right: 1px solid;
   position: relative;
 }
 
@@ -136,20 +156,18 @@ export default {
   border-radius: 10px;
 }
 
-.innerModal {
+.inner-modal {
   display: flex;
   justify-content: center;
   flex-direction: column;
 }
 
-.mainPage {
-  width: 800px;
-  border-style: solid;
+.main-page {
+  width: 100%;
   display: flex;
   justify-content: center;
   flex-direction: row;
   overflow: scroll;
-  background-color: white;
   position: relative;
   z-index: 0;
   height: 100%;
@@ -162,23 +180,33 @@ export default {
   z-index: 0;
 }
 
-.profilePicture {
+.profile-picture {
   width: 30px;
   border-radius: 50%;
+  margin-right: 5px;
 }
 
-.likeRow {
+.like-row {
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
 }
 
+.profile-picture-username {
+  display: flex;
+  align-items: center;
+}
+
+ul {
+  margin-left: -30px;
+}
+
 @media (min-width: 0px) and (max-width: 1100px) {
-  .mainPage {
+  .main-page {
     width: 100%;
   }
 
-  .navBar {
+  .nav-bar {
     display: none;
   }
 

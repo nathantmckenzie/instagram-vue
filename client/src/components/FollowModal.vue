@@ -18,26 +18,55 @@
             "
             class="follower-profile-picture"
           />
-          {{
-            title === "Followers"
-              ? follower.follower_name
-              : title === "Following"
-              ? follower.target_name
-              : null
-          }}
+          <span @click="getProfile(follower)"
+            >{{
+              title === "Followers"
+                ? follower.follower_username
+                : title === "Following"
+                ? follower.target_username
+                : null
+            }}
+          </span>
         </div>
-        <button @click="unfollow(follower.id, 1)" class="follow-button">
-          {{
-            title === "Followers"
-              ? followingListIDs.includes(follower.id)
-                ? "Following"
-                : "Follow"
-              : title === "Following"
-              ? followingListIDs.includes(follower.id)
-                ? "Following"
-                : "Follow"
-              : null
-          }}
+        <button
+          v-if="
+            title === 'Followers' &&
+            followingListIDs.includes(follower.follower_id) &&
+            this.$store.state.currentUser.id !== follower.follower_id
+          "
+          @click="unfollow(follower.follower_id, this.$store.state.currentUser.id)"
+          class="following-button"
+        >
+          Following
+        </button>
+        <button
+          v-else-if="
+            title === 'Followers' &&
+            !followingListIDs.includes(follower.follower_id) &&
+            this.$store.state.currentUser.id !== follower.follower_id
+          "
+          @click="follow(follower.follower_id, this.$store.state.currentUser.id)"
+          class="follow-button"
+        >
+          Follow
+        </button>
+        <button
+          v-else-if="
+            title === 'Following' && followingListIDs.includes(follower.target_id)
+          "
+          @click="unfollow(follower.target_id, this.$store.state.currentUser.id)"
+          class="following-button"
+        >
+          Following
+        </button>
+        <button
+          v-else-if="
+            title === 'Following' && !followingListIDs.includes(follower.target_id)
+          "
+          @click="follow(follower.target_id, this.$store.state.currentUser.id)"
+          class="follow-button"
+        >
+          Follow
         </button>
       </li>
     </ul>
@@ -47,32 +76,30 @@
 <script>
 export default {
   name: "FollowModalComponent",
-  data() {
-    return {
-      followingListIDs: [],
-      followersListIDs: [],
-    };
-  },
   props: {
     list: Array,
     title: String,
+    getProfileFunction: Function,
+    follow: Function,
+    unfollow: Function,
+    followingListIDs: Array,
   },
   methods: {
     closeModal() {
       this.$refs.modalContainer.close();
     },
+    getProfile(follower) {
+      if (this.title === "Followers") {
+        console.log("this.follower_username", follower.follower_username);
+        this.getProfileFunction(follower.follower_username);
+      } else if (this.title === "Following") {
+        this.getProfileFunction(follower.target_username);
+      }
+      this.closeModal();
+    },
   },
   computed: {
     console: () => console,
-  },
-  mounted() {
-    this.followersListIDs = this.$store.state.followList.following.map(
-      (item) => item.follower_id
-    );
-
-    this.followingListIDs = this.$store.state.followList.following.map(
-      (item) => item.target_id
-    );
   },
 };
 </script>
@@ -95,6 +122,12 @@ export default {
   background-color: #0095f6;
   border-radius: 20%;
   color: white;
+}
+
+.following-button {
+  background-color: white;
+  border-radius: 20%;
+  color: black;
 }
 
 .profile-picture-username {
