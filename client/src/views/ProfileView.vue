@@ -78,7 +78,7 @@
       </div>
       <div v-else>
         <div class="images">
-          <div v-for="(post, index) of this.$store.state.userPosts" :key="post.id">
+          <div v-for="(post, index) of this.userPosts" :key="post.id">
             <div
               v-if="post.content_type === 1"
               @click="this.displayPostModal(post, index)"
@@ -93,8 +93,8 @@
             </div>
             <div v-else-if="post.content_type === 2">
               <video @click="this.displayPostModal(post, index)" class="video" muted>
-                <source :src="post.content" type="video/mp4" />
-                <source :src="post.content" type="video/ogg" />
+                <source :src="post.content + '?t=12345'" type="video/mp4" />
+                <source :src="post.content + '?t=12345'" type="video/ogg" />
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -179,8 +179,14 @@
                 @play="onPlay"
                 @pause="onPause"
               >
-                <source :src="this.displayedPost.content" type="video/mp4" />
-                <source :src="this.displayedPost.content" type="video/ogg" />
+                <source
+                  :src="this.displayedPost.content + `?v=${Math.random()}`"
+                  type="video/mp4"
+                />
+                <source
+                  :src="this.displayedPost.content + `?v=${Math.random()}`"
+                  type="video/ogg"
+                />
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -608,6 +614,7 @@ export default {
       }
     },
     displayPreviousPost() {
+      this.displayedPost = "";
       this.displayedPost = this.$store.state.userPosts[this.currentIndex - 1];
       this.currentIndex = this.currentIndex - 1;
       this.isLiked = this.verifyUserLikedPost();
@@ -630,7 +637,9 @@ export default {
       }
     },
     displayNextPost() {
-      this.displayedPost = this.$store.state.userPosts[this.currentIndex + 1];
+      this.displayedPost = "";
+      this.displayedPost = this.userPosts[this.currentIndex + 1];
+      console.log("WEOOO 634", this.displayedPost);
       this.currentIndex = this.currentIndex + 1;
       this.isLiked = this.verifyUserLikedPost();
       if (this.displayedPost.content_type === 2) {
@@ -664,7 +673,10 @@ export default {
   mounted() {
     this.$store.dispatch("updateToken").then(() => {
       this.$store.dispatch("getData").then(() => {
-        this.$store.dispatch("getProfileData", this.$route.params.username);
+        this.$store.dispatch("getCurrentUserFollowerMap");
+        this.$store.dispatch("getProfileData", this.$route.params.username).then(() => {
+          this.$store.state.userPosts;
+        });
         this.$store
           .dispatch("getTargetUserFollowerMap", this.$route.params.username)
           .then(() => {
@@ -688,7 +700,10 @@ export default {
       return this.$store.state.targetUser;
     },
     userPosts: function () {
-      return this.$store.state.userPosts;
+      console.log("694", this.$store.state.userPosts);
+      return this.$store.state.userPosts.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      );
     },
     profile: function () {
       return this.$store.state.profile;
@@ -756,6 +771,11 @@ ul {
   height: 150px;
   margin-bottom: 30px;
   margin-right: 50px;
+}
+
+.profile-picture img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
