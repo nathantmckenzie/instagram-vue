@@ -162,6 +162,7 @@
           <div class="modal-post-container">
             <div @click="closePostModal">x</div>
             <img
+              :key="this.displayedPost.content"
               v-if="this.displayedPost.content_type === 1"
               :src="this.displayedPost.content"
               class="modal-image"
@@ -172,6 +173,7 @@
             >
               <video
                 ref="videoPlayer"
+                :key="this.displayedPost.content"
                 width="320"
                 height="600"
                 autoplay
@@ -179,14 +181,8 @@
                 @play="onPlay"
                 @pause="onPause"
               >
-                <source
-                  :src="this.displayedPost.content + `?v=${Math.random()}`"
-                  type="video/mp4"
-                />
-                <source
-                  :src="this.displayedPost.content + `?v=${Math.random()}`"
-                  type="video/ogg"
-                />
+                <source :src="this.displayedPost.content" type="video/mp4" />
+                <source :src="this.displayedPost.content" type="video/ogg" />
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -282,6 +278,7 @@
                   />
                   <comment-button width="large" />
                   <button class="icons">Send</button>
+                  <button @click="changeTest">test</button>
                 </div>
                 <div v-if="this.displayedPost?.likes">
                   <img
@@ -377,18 +374,20 @@ export default {
 
       this.$nextTick(() => {
         this.videoPlayer = this.$refs.videoPlayer;
-        this.videoPlayer.addEventListener("ended", () => {
-          this.videoPlayer.currentTime = 0;
-          this.videoPlayer.play();
-        });
-
-        this.videoPlayer.addEventListener("click", () => {
-          if (this.isVideoPlaying) {
-            this.videoPlayer.pause();
-          } else {
+        if (this.videoPlayer) {
+          this.videoPlayer.addEventListener("ended", () => {
+            this.videoPlayer.currentTime = 0;
             this.videoPlayer.play();
-          }
-        });
+          });
+
+          this.videoPlayer.addEventListener("click", () => {
+            if (this.isVideoPlaying) {
+              this.videoPlayer.pause();
+            } else {
+              this.videoPlayer.play();
+            }
+          });
+        }
       });
     },
     closePostModal() {
@@ -614,7 +613,6 @@ export default {
       }
     },
     displayPreviousPost() {
-      this.displayedPost = "";
       this.displayedPost = this.$store.state.userPosts[this.currentIndex - 1];
       this.currentIndex = this.currentIndex - 1;
       this.isLiked = this.verifyUserLikedPost();
@@ -637,7 +635,6 @@ export default {
       }
     },
     displayNextPost() {
-      this.displayedPost = "";
       this.displayedPost = this.userPosts[this.currentIndex + 1];
       console.log("WEOOO 634", this.displayedPost);
       this.currentIndex = this.currentIndex + 1;
@@ -645,18 +642,20 @@ export default {
       if (this.displayedPost.content_type === 2) {
         this.$nextTick(() => {
           this.videoPlayer = this.$refs.videoPlayer;
-          this.videoPlayer.addEventListener("ended", () => {
-            this.videoPlayer.currentTime = 0;
-            this.videoPlayer.play();
-          });
-
-          this.videoPlayer.addEventListener("click", () => {
-            if (this.isVideoPlaying) {
-              this.videoPlayer.pause();
-            } else {
+          if (this.videoPlayer) {
+            this.videoPlayer.addEventListener("ended", () => {
+              this.videoPlayer.currentTime = 0;
               this.videoPlayer.play();
-            }
-          });
+            });
+
+            this.videoPlayer.addEventListener("click", () => {
+              if (this.isVideoPlaying) {
+                this.videoPlayer.pause();
+              } else {
+                this.videoPlayer.play();
+              }
+            });
+          }
         });
       }
     },
@@ -727,13 +726,7 @@ export default {
       );
     },
     isFollowing() {
-      this.console.log(
-        "line 690",
-        this.$store.state.currentUserFollowerMap?.following.some(
-          (obj) => obj.target_id === this.targetUser.id
-        )
-      );
-      return this.$store.state.currentUserFollowerMap?.following.some(
+      return this.$store.state.currentUserFollowerMap?.following?.some(
         (obj) => obj.target_id === this.targetUser.id
       );
     },
@@ -849,7 +842,7 @@ button {
 }
 
 .modal-image {
-  width: 400px;
+  width: 550px;
   height: 550px;
   object-fit: cover;
 }
